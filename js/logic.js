@@ -1131,6 +1131,117 @@
     return out;
   }
 
+  /* ---------------------------------------------------- 时间网格（甘特） */
+
+  /**
+   * 把活动排成时间网格的坐标。
+   *
+   * 与列表、月历的区别：这里横轴是**小时**，活动按真实起止时间画成块。
+   * 于是"撞车"不再需要文字描述——两个色块直接叠在同一段横坐标上，一眼可见。
+   * 这是本作品把"时间冲突"从文字提示升级为可视化的关键一步。
+   *
+   * @param {object[]} activities
+   * @param {string} today 基准日
+   * @param {{days?:number, startHour?:number, endHour?:number}} options
+   */
+  function buildTimeGrid(activities, today, options) {
+    var opts = options || {};
+    var span = (opts.days === undefined || opts.days === null) ? 7 : Number(opts.days);
+    var startHour = opts.startHour === undefined ? 8 : opts.startHour;
+    var endHour = opts.endHour === undefined ? 22 : opts.endHour;
+    if (!(span > 0)) span = 7;
+    if (!(endHour > startHour)) { startHour = 8; endHour = 22; }
+
+    var base = toDate(today);
+    if (!base) return { days: [], startHour: startHour, endHour: endHour, dayCount: 0 };
+
+    var result = [];
+    for (var i = 0; i < span; i++) {
+      var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      result.push({
+        date: toIso(d),
+        day: d.getDate(),
+        weekday: WEEKDAY_LABELS[(d.getDay() + 6) % 7],
+        isToday: i === 0,
+        isWeekend: d.getDay() === 0 || d.getDay() === 6,
+        items: []
+      });
+    }
+    var byDate = {};
+    result.forEach(function (day) { byDate[day.date] = day; });
+
+    activities.forEach(function (act) {
+      var sessionAt = act.schedule && act.schedule.firstSessionAt;
+      if (!sessionAt) return;
+      var day = byDate[isoDatePart(sessionAt)];
+      if (!day) return;
+
+      var win = sessionWindow(act);
+      if (!win) return;
+
+      /* 换算成"距当天 0 点的小时数"，再按可视窗口裁剪 */
+      var startH = win.start.getHours() + win.start.getMinutes() / 60;
+      var endH = win.end.getHours() + win.end.getMinutes() / 60;
+      if (endH <= startH) endH = startH + 1;   /* 异常数据保护 */
+
+      var clippedStart = Math.max(startH, startHour);
+      var clippedEnd = Math.min(endH, endHour);
+
+      day.items.push({
+        activity: act,
+        status: computeStatus(act, today),
+        startHour: startH,
+        endHour: endH,
+        range: formatRange(win.start, win.end),
+        estimated: !act.schedule.endAt,
+        top: (clippedStart - startHour) / (endHour - startHour),
+        height: Math.max(0.03, (clippedEnd - clippedStart) / (endHour - startHour)),
+        visible: clippedEnd > clippedStart,
+        clipped: startH < startHour || endH > endHour
+      });
+    });
+
+    /* 每天内部按开始时间排序，并标出彼此重叠的块 */
+    var totalItems = 0;
+    var conflictPairs = 0;
+    result.forEach(function (day) {
+      day.items.sort(function (a, b) { return a.startHour - b.startHour; });
+      day.items.forEach(function (item) { item.overlaps = []; });
+      for (var a = 0; a < day.items.length; a++) {
+        for (var b = a + 1; b < day.items.length; b++) {
+          var x = day.items[a], y = day.items[b];
+          if (x.startHour < y.endHour && y.startHour < x.endHour) {
+            x.overlaps.push(y.activity.id);
+            y.overlaps.push(x.activity.id);
+            conflictPairs++;
+          }
+        }
+      }
+      day.conflictCount = day.items.filter(function (it) { return it.overlaps.length; }).length;
+      totalItems += day.items.length;
+    });
+
+    var busiest = result.reduce(function (best, day) {
+      return day.items.length > (best ? best.items.length : 0) ? day : best;
+    }, null);
+
+    var hours = [];
+    for (var h = startHour; h <= endHour; h++) hours.push(h);
+
+    return {
+      days: result,
+      hours: hours,
+      startHour: startHour,
+      endHour: endHour,
+      dayCount: result.length,
+      totalItems: totalItems,
+      conflictPairs: conflictPairs,
+      busiest: busiest && busiest.items.length
+        ? { date: busiest.date, count: busiest.items.length, weekday: busiest.weekday }
+        : null
+    };
+  }
+
   /* -------------------------------------------------------------- 导出 */
 
   return {
@@ -1178,6 +1289,7 @@
     /* 日历视图与密度 */
     buildCalendarGrid: buildCalendarGrid,
     buildDensity: buildDensity,
+    buildTimeGrid: buildTimeGrid,
     toIso: toIso,
     WEEKDAY_LABELS: WEEKDAY_LABELS
   };

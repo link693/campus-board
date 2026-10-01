@@ -378,6 +378,74 @@ test("已结束的活动不计入密度", () => {
   eq(b18.sessions, 1, "基准日为 9/17 时，9/18 的直播尚未结束，应计入");
 });
 
+group("时间网格（甘特视图）");
+
+test("网格覆盖 7 天，横轴按小时铺开", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY);
+  eq(grid.dayCount, 7);
+  eq(grid.days.length, 7);
+  eq(grid.startHour, 8);
+  eq(grid.endHour, 22);
+  eq(grid.hours.length, 15, "8—22 点共 15 个刻度");
+  eq(grid.days[0].isToday, true);
+});
+
+test("活动按真实时间换算成纵向位置与高度", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY);
+  const day = grid.days.find((d) => d.date === "2026-09-19");
+  const item = day.items.find((i) => i.activity.id === "frontend-exchange");
+  assert(item, "9/19 应有前端开发经验交流会");
+  eq(item.startHour, 15, "15:00 开始");
+  eq(item.endHour, 16.5, "16:30 结束");
+  // (15-8)/(22-8) = 0.5
+  eq(Math.round(item.top * 100) / 100, 0.5);
+  eq(item.range, "15:00—16:30");
+});
+
+test("同一天内时间重叠的活动被互相标记", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY);
+  const day = grid.days.find((d) => d.date === "2026-09-19");
+  const ai = day.items.find((i) => i.activity.id === "ai-intro-open-class");
+  const sec = day.items.find((i) => i.activity.id === "cybersecurity-group");
+  assert(ai && sec, "9/19 应有公开课与安全小组");
+  assert(ai.overlaps.indexOf("cybersecurity-group") >= 0, "公开课应标记与安全小组重叠");
+  assert(sec.overlaps.indexOf("ai-intro-open-class") >= 0, "反向也应标记");
+  assert(day.conflictCount >= 2, "当天应有至少 2 个块涉及冲突");
+});
+
+test("9 月 21 日是格子最拥挤的一天", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY);
+  const d21 = grid.days.find((d) => d.date === "2026-09-21");
+  assert(d21.items.length >= 4, `9/21 应有至少 4 场活动，实际 ${d21.items.length}`);
+  assert(grid.busiest, "应统计出最忙的一天");
+  eq(grid.busiest.count >= d21.items.length, true, "最忙一天的数量不应小于 9/21");
+  assert(grid.conflictPairs > 0, "整体应统计出冲突对数");
+});
+
+test("原文未给结束时间的活动被标记为估算", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY);
+  const lang = grid.days
+    .flatMap((d) => d.items)
+    .find((i) => i.activity.id === "language-corner");
+  assert(lang, "语言角应出现在网格里");
+  eq(lang.estimated, true, "原文未给结束时间，应标记为估算");
+});
+
+test("超出可视时段的活动被裁剪但仍保留真实起止", () => {
+  const grid = logic.buildTimeGrid(data.activities, TODAY, { startHour: 12, endHour: 18 });
+  const day = grid.days.find((d) => d.date === "2026-09-19");
+  const ai = day.items.find((i) => i.activity.id === "ai-intro-open-class");
+  eq(ai.clipped, true, "19:00 开始已超出 18 点上限，应标记被裁剪");
+  eq(ai.visible, false, "完全在窗口外的块不可见");
+  eq(ai.startHour, 19, "真实开始时间仍应保留");
+});
+
+test("已结束的活动不进入网格", () => {
+  const grid = logic.buildTimeGrid(data.activities, "2026-09-28");
+  const ids = grid.days.flatMap((d) => d.items).map((i) => i.activity.id);
+  assert(ids.indexOf("math-modeling-replay") < 0, "9/18 的直播不应出现");
+});
+
 /* -------------------------------------------------------------- 汇总 */
 
 console.log(`\n${"-".repeat(52)}`);

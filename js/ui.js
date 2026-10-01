@@ -1000,6 +1000,123 @@
     return box;
   }
 
+  /* ======================================================== 时间网格视图 */
+
+  /**
+   * 时间网格（甘特）：横轴是七天，纵轴是小时，活动按起止时间画成块。
+   *
+   * 这个视图存在的唯一理由：让"撞车"变成可见的物理事实——
+   * 两个色块叠在同一段横坐标上，不需要任何文字解释。
+   */
+  function renderTimeGrid(container, grid, today, handlers) {
+    container.textContent = "";
+    if (!grid || !grid.dayCount) {
+      container.appendChild(el("p", "prose", "这一周没有可排的活动。"));
+      return;
+    }
+
+    var cols = grid.dayCount;
+    var wrap = el("div", "tg");
+    /* 注意：不能写成 grid-template-columns: repeat(var(--n), …)。
+       repeat() 在解析期无法用自定义属性求值，会让整条列定义失效、刻度错位。
+       因此这里直接给出完整的列/行定义。 */
+    wrap.style.gridTemplateColumns = "40px repeat(" + cols + ", minmax(0, 1fr))";
+    wrap.style.gridTemplateRows = "auto repeat(" + grid.hours.length + ", var(--tg-row))";
+
+    /* ---- 表头：日期 + 当天活动数（含冲突标记） ---- */
+    grid.days.forEach(function (day) {
+      var head = el("div", "tg-head");
+      head.dataset.today = String(day.isToday);
+      head.dataset.weekend = String(day.isWeekend);
+      head.appendChild(el("span", "tg-weekday", day.weekday));
+      head.appendChild(el("span", "tg-daynum", String(day.day)));
+      if (day.items.length) {
+        var count = el("span", "tg-count", day.items.length + " 场");
+        if (day.conflictCount) count.dataset.conflict = "true";
+        head.appendChild(count);
+      }
+      wrap.appendChild(head);
+    });
+
+    /* ---- 小时刻度（横线贯穿整行） ----
+       必须显式指定列与行：日列占用了 1 / -1 行，自动排布会把刻度挤到第 2 列起。 */
+    grid.hours.forEach(function (h, rowIndex) {
+      var label = el("div", "tg-hour", String(h).padStart(2, "0") + ":00");
+      label.style.gridColumn = "1";
+      label.style.gridRow = String(rowIndex + 1);
+      wrap.appendChild(label);
+      for (var c = 0; c < cols; c++) {
+        var slot = el("div", "tg-slot");
+        slot.dataset.hour = String(h);
+        slot.style.gridColumn = String(c + 2);
+        slot.style.gridRow = String(rowIndex + 1);
+        wrap.appendChild(slot);
+      }
+    });
+
+    /* ---- 每天一列，绝对定位摆放活动块 ---- */
+    grid.days.forEach(function (day, colIndex) {
+      var col = el("div", "tg-col");
+      col.dataset.date = day.date;
+      /* 同样显式定位：第 1 列留给小时刻度 */
+      col.style.gridColumn = String(colIndex + 2);
+      col.style.gridRow = "1 / -1";
+
+      if (!day.items.length) {
+        col.appendChild(el("span", "tg-empty", "无安排"));
+      }
+
+      day.items.forEach(function (item, index) {
+        if (!item.visible) return;   /* 完全落在可视时段之外 */
+
+        var block = el("button", "tg-block");
+        block.type = "button";
+        block.dataset.tone = item.status.tone || "neutral";
+        block.dataset.conflict = String(item.overlaps.length > 0);
+        block.dataset.estimated = String(item.estimated);
+        /* 重叠的块用横向错位让两层都露出边缘，避免完全盖住 */
+        block.style.setProperty("--tg-top", (item.top * 100).toFixed(3) + "%");
+        block.style.setProperty("--tg-height", (item.height * 100).toFixed(3) + "%");
+        block.style.setProperty("--tg-lane", String(index % 2));
+
+        var time = el("span", "tg-block-time", item.range + (item.estimated ? "（估算）" : ""));
+        var title = el("span", "tg-block-title", item.activity.title);
+        block.appendChild(time);
+        block.appendChild(title);
+
+        block.title = day.date + " " + item.range + "　" + item.activity.title +
+          "　" + item.status.label +
+          (item.overlaps.length ? "（与 " + item.overlaps.length + " 场时间重叠）" : "");
+
+        block.addEventListener("click", function () { handlers.openDetail(item.activity.id); });
+        col.appendChild(block);
+      });
+
+      wrap.appendChild(col);
+    });
+
+    /* ---- 图例与统计 ---- */
+    var legend = el("div", "tg-legend");
+    legend.appendChild(el("span", null,
+      grid.totalItems + " 场活动 · " + grid.dayCount + " 天"));
+    if (grid.conflictPairs) {
+      var conflict = el("span", "tg-legend-conflict");
+      conflict.appendChild(icon("i-alert"));
+      conflict.appendChild(el("span", null,
+        grid.conflictPairs + " 处时间重叠，色块会互相交叠"));
+      legend.appendChild(conflict);
+    }
+    if (grid.busiest) {
+      legend.appendChild(el("span", null,
+        "最忙：" + L.formatDate(grid.busiest.date) + "（" + grid.busiest.count + " 场）"));
+    }
+
+    var box = el("div", "tg-wrap");
+    box.appendChild(wrap);
+    box.appendChild(legend);
+    container.appendChild(box);
+  }
+
   /* ============================================================ 密度与日历 */
 
   /**
@@ -1227,6 +1344,7 @@
     renderConflicts: renderConflicts,
     renderDensity: renderDensity,
     renderCalendarView: renderCalendarView,
+    renderTimeGrid: renderTimeGrid,
 
     deadlineText: deadlineText,
     scheduleText: scheduleText,

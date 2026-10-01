@@ -335,6 +335,10 @@
     if (filters.timelineView === "calendar") {
       UI.renderCalendarView(dom.timeline, L.buildCalendarGrid(activities, baseline()), baseline(), handlers);
       dom.timelineNote.textContent = "点任意日期查看当天安排；带橙色角标的日子存在时间冲突";
+    } else if (filters.timelineView === "grid") {
+      UI.renderTimeGrid(dom.timeline, L.buildTimeGrid(activities, baseline(), { days: 7 }),
+        baseline(), handlers);
+      dom.timelineNote.textContent = "横轴为未来七天、纵轴为小时；互相交叠的色块就是时间冲突";
     } else {
       UI.renderTimeline(dom.timeline, timeline, store, handlers, baseline());
       dom.timelineNote.textContent = timeline.all.length + " 个节点";

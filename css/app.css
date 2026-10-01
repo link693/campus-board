@@ -2483,6 +2483,217 @@
   font-family: var(--font-mono);
 }
 
+/* ============================ 时间网格（甘特视图） ============================ */
+
+.tg-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* 网格：第一列是小时刻度，其余每列一天。
+   行列定义由 js 直接写入（repeat() 无法用自定义属性求值）。
+   行高固定 26px，保证"1 小时"在所有视口下都是同一物理高度。 */
+.tg {
+  --tg-row: 26px;
+  display: grid;
+  gap: 0 3px;
+  overflow-x: auto;
+  padding-bottom: var(--sp-1);
+}
+
+/* 表头：星期 + 日期 + 当天场次 */
+.tg-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: var(--sp-1) 0 var(--sp-2);
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+
+.tg-head[data-today="true"] {
+  background: var(--accent-bg);
+  border-bottom-color: var(--accent);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+.tg-weekday {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  line-height: 1;
+}
+
+.tg-daynum {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-title);
+  line-height: 1.1;
+}
+
+.tg-head[data-today="true"] .tg-daynum {
+  color: var(--accent);
+}
+
+.tg-head[data-weekend="true"] .tg-weekday {
+  opacity: 0.6;
+}
+
+.tg-count {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  line-height: 1;
+}
+
+.tg-count[data-conflict="true"] {
+  color: var(--warning);
+  font-weight: var(--fw-strong);
+}
+
+/* 小时刻度与网格底线 */
+.tg-hour {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-right: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  transform: translateY(-7px);
+}
+
+.tg-slot {
+  border-top: 1px solid var(--border);
+}
+
+.tg-slot[data-hour="12"] {
+  border-top-color: var(--border-strong);
+}
+
+/* 表头与日列的关系：表头横跨第 1 行，日列覆盖全部行 */
+.tg-head {
+  grid-row: 1;
+}
+
+/* 每天一列：活动块绝对定位叠加在这里。
+   注意必须是 1 / -1：表头之后没有占位行，若写成 2 / -1 会整体错位一行。 */
+.tg-col {
+  position: relative;
+  grid-row: 1 / -1;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+}
+
+.tg-empty {
+  position: absolute;
+  top: var(--sp-2);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  opacity: 0.55;
+}
+
+/* 活动块：位置与高度由逻辑层算出的百分比决定 */
+.tg-block {
+  position: absolute;
+  top: var(--tg-top, 0%);
+  height: var(--tg-height, 8%);
+  left: calc(2% + var(--tg-lane, 0) * 5%);
+  right: 2%;
+  z-index: calc(1 + var(--tg-lane, 0));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px var(--sp-1);
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  background: var(--surface-solid);
+  text-align: left;
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-base) var(--ease);
+}
+
+.tg-block:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh-2);
+  z-index: 6;
+}
+
+.tg-block[data-tone="danger"] {
+  border-left-color: var(--danger);
+}
+
+.tg-block[data-tone="warning"] {
+  border-left-color: var(--warning);
+}
+
+.tg-block[data-tone="success"] {
+  border-left-color: var(--success);
+}
+
+.tg-block[data-tone="neutral"] {
+  border-left-color: var(--text-subtle);
+  opacity: 0.75;
+}
+
+/* 存在时间重叠的块：换用警示底并加虚线描边，叠加处一眼可辨 */
+.tg-block[data-conflict="true"] {
+  border-style: dashed;
+  border-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 18%, var(--surface-solid));
+}
+
+.tg-block-time {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.15;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tg-block-title {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: 1.25;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 图例 */
+.tg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+.tg-legend-conflict {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--warning);
+}
+
+.tg-legend-conflict svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
 /* ================================ 提示条 ================================ */
 
 /* 时效预警：只在临近失效或已失效时出现 */
