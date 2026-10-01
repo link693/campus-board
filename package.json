@@ -1,0 +1,19 @@
+{
+  "name": "campus-board",
+  "version": "1.0.0",
+  "private": true,
+  "description": "校园活动板：面向在校学生的校园活动与机会平台（纯静态前端 + 离线数据工具链）",
+  "keywords": ["校园活动", "信息聚合", "信息治理", "vanilla-js", "zero-build"],
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "test:logic": "node tests/logic.test.js",
+    "test:store": "node tests/store.test.js",
+    "test:wiring": "node tests/dom-wiring.test.js",
+    "build:data": "python tools/build_dataset.py",
+    "check:data": "python tools/build_dataset.py --check"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
