@@ -948,6 +948,186 @@
     return lines.join("\r\n") + "\r\n";
   }
 
+  /* ------------------------------------------------------------ 日历视图 */
+
+  var WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
+
+  /** 把 Date 归一化成 YYYY-MM-DD。 */
+  function toIso(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  /** 周一为一周的第一天。 */
+  function startOfWeek(d) {
+    var day = d.getDay();               // 0=周日
+    var back = (day + 6) % 7;           // 周一→0，周日→6
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - back);
+  }
+
+  /**
+   * 月历模型：把活动按日期摊到日历格子里。
+   *
+   * 这是界面上的"新意"所在——列表只能按状态排，看不出某一天到底挤了多少事；
+   * 日历把时间维度直接画出来，9 月 19 日与 21 日的拥挤一眼可见。
+   *
+   * @param {object[]} activities
+   * @param {string} today 基准日
+   * @param {string} month 目标月份 YYYY-MM，默认取基准日所在月
+   */
+  function buildCalendarGrid(activities, today, month) {
+    var base = toDate(today);
+    if (!base) return null;
+    var target = month ? toDate(month + "-01") : base;
+    if (!target) target = base;
+
+    var year = target.getFullYear();
+    var mon = target.getMonth();
+    var first = new Date(year, mon, 1);
+    var last = new Date(year, mon + 1, 0);
+
+    var weeks = [];
+    var cursor = startOfWeek(first);
+    var guard = 0;
+    while (cursor <= last && guard++ < 8) {
+      var week = [];
+      for (var i = 0; i < 7; i++) {
+        var cellDate = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + i);
+        var iso = toIso(cellDate);
+        var entries = [];
+        var isToday = iso === isoDatePart(today);
+        var hasConflict = false;
+        var conflictDays = {};
+
+        activities.forEach(function (act) {
+          var sessionDate = isoDatePart(act.schedule && act.schedule.firstSessionAt);
+          var deadlineDate = isoDatePart(act.registration && act.registration.deadlineAt);
+          var expiryDate = isoDatePart(act.registration && act.registration.evidenceRefAt);
+          var status = computeStatus(act, today);
+
+          if (sessionDate === iso) {
+            entries.push({
+              activity: act, kind: "session", status: status,
+              label: formatTime(act.schedule.firstSessionAt) || "全天"
+            });
+          }
+          if (deadlineDate === iso) {
+            entries.push({ activity: act, kind: "deadline", status: status, label: "截止" });
+          }
+          if (expiryDate === iso) {
+            entries.push({ activity: act, kind: "expiry", status: status, label: "失效" });
+          }
+
+          /* 同一天里有多场活动且时间重叠 → 标记这天有冲突 */
+          if (sessionDate === iso) {
+            var conflicts = findConflicts(act, activities, today);
+            if (conflicts.length) {
+              hasConflict = true;
+              conflictDays[act.id] = conflicts.length;
+            }
+          }
+        });
+
+        entries.sort(function (a, b) {
+          if (a.kind !== b.kind) return a.kind === "deadline" ? -1 : 1;
+          return String(a.label).localeCompare(String(b.label));
+        });
+
+        week.push({
+          date: iso,
+          day: cellDate.getDate(),
+          inMonth: cellDate.getMonth() === mon,
+          isToday: isToday,
+          isPast: cellDate < new Date(base.getFullYear(), base.getMonth(), base.getDate()),
+          entries: entries,
+          counts: {
+            session: entries.filter(function (e) { return e.kind === "session"; }).length,
+            deadline: entries.filter(function (e) { return e.kind === "deadline"; }).length,
+            expiry: entries.filter(function (e) { return e.kind === "expiry"; }).length
+          },
+          hasConflict: hasConflict
+        });
+      }
+      weeks.push(week);
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 7);
+    }
+
+    /* 本月事件统计，用于副标题 */
+    var monthEntries = 0;
+    var monthConflictDays = 0;
+    weeks.forEach(function (week) {
+      week.forEach(function (cell) {
+        if (!cell.inMonth) return;
+        monthEntries += cell.entries.length;
+        if (cell.hasConflict) monthConflictDays++;
+      });
+    });
+
+    return {
+      year: year,
+      month: mon + 1,
+      monthKey: year + "-" + pad2(mon + 1),
+      label: year + " 年 " + (mon + 1) + " 月",
+      weekdayLabels: WEEKDAY_LABELS,
+      weeks: weeks,
+      stats: {
+        entries: monthEntries,
+        activeDays: weeks.reduce(function (n, w) {
+          return n + w.filter(function (c) { return c.inMonth && c.entries.length; }).length;
+        }, 0),
+        conflictDays: monthConflictDays
+      }
+    };
+  }
+
+  /**
+   * 未来 N 天的繁忙度，用于"密度条"。
+   * 让"哪几天最挤"在不点开任何东西的情况下就能看出来。
+   */
+  function buildDensity(activities, today, days) {
+    var span = (days === undefined || days === null) ? 14 : Number(days);
+    var base = toDate(today);
+    if (!base) return [];
+    var out = [];
+
+    for (var i = 0; i < span; i++) {
+      var d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      var iso = toIso(d);
+      var sessions = 0, deadlines = 0, conflicts = 0;
+
+      activities.forEach(function (act) {
+        var status = computeStatus(act, today);
+        if (status.code === STATUS.ENDED) return;
+        if (isoDatePart(act.schedule.firstSessionAt) === iso) sessions++;
+        if (isoDatePart(act.registration.deadlineAt) === iso) deadlines++;
+      });
+      /* 冲突按"这天有几对重叠"粗略统计 */
+      var dayActs = activities.filter(function (a) {
+        return isoDatePart(a.schedule && a.schedule.firstSessionAt) === iso;
+      });
+      for (var a = 0; a < dayActs.length; a++) {
+        for (var b = a + 1; b < dayActs.length; b++) {
+          var wa = sessionWindow(dayActs[a]);
+          var wb = sessionWindow(dayActs[b]);
+          if (wa && wb && overlaps(wa, wb)) conflicts++;
+        }
+      }
+
+      out.push({
+        date: iso,
+        day: d.getDate(),
+        weekday: WEEKDAY_LABELS[(d.getDay() + 6) % 7],
+        isToday: i === 0,
+        isWeekend: d.getDay() === 0 || d.getDay() === 6,
+        sessions: sessions,
+        deadlines: deadlines,
+        conflicts: conflicts,
+        load: sessions + deadlines,
+        level: Math.min(4, sessions + deadlines + (conflicts ? 1 : 0))
+      });
+    }
+    return out;
+  }
+
   /* -------------------------------------------------------------- 导出 */
 
   return {
@@ -990,6 +1170,12 @@
     computeExpiry: computeExpiry,
     projectTransitions: projectTransitions,
     buildCalendar: buildCalendar,
-    icsStamp: icsStamp
+    icsStamp: icsStamp,
+
+    /* 日历视图与密度 */
+    buildCalendarGrid: buildCalendarGrid,
+    buildDensity: buildDensity,
+    toIso: toIso,
+    WEEKDAY_LABELS: WEEKDAY_LABELS
   };
 });

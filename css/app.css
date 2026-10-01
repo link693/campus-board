@@ -1077,15 +1077,50 @@
   border-color: var(--border-accent);
 }
 
-/* 左侧状态竖条：仅用于状态，不做装饰 */
+/* 左侧状态脊：用状态色画一道渐变，扫列表时形成视觉节奏。
+   状态色只表达状态，不作为装饰；渐变让它更像"发光边缘"而不是色块。 */
 .card::before {
   content: "";
   position: absolute;
-  inset: var(--sp-4) auto var(--sp-4) 0;
+  inset: var(--sp-3) auto var(--sp-3) 0;
   width: 3px;
   border-radius: var(--r-pill);
-  background: var(--tone-color, transparent);
-  transition: background var(--t-base) var(--ease);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--tone-color, transparent) 22%,
+    var(--tone-color, transparent) 78%,
+    transparent
+  );
+  transition: inset var(--t-base) var(--ease), width var(--t-base) var(--ease);
+}
+
+.card:hover::before {
+  inset: var(--sp-2) auto var(--sp-2) 0;
+  width: 4px;
+}
+
+/* 图标微动效：悬停时轻微上浮，给"可点"一个直觉反馈 */
+.btn svg,
+.act-btn svg,
+.icon-btn svg,
+.chip svg,
+.switch svg {
+  transition: transform var(--t-base) var(--ease);
+}
+
+.btn:hover svg,
+.act-btn:hover svg,
+.icon-btn:hover svg,
+.chip:hover svg,
+.switch:hover svg {
+  transform: translateY(-1px);
+}
+
+/* 主操作按钮悬停时图标轻推一下，强化"行动"暗示 */
+.btn-primary:hover svg,
+.act-btn-primary:hover svg {
+  transform: translateY(-1px) scale(1.08);
 }
 
 .card-top {
@@ -2076,6 +2111,278 @@
   border-color: var(--danger-border-strong);
   background: var(--danger-bg);
   color: var(--danger-text);
+}
+
+/* ================================ 日历视图 ================================ */
+
+.segmented-sm {
+  padding: 3px;
+}
+
+.segmented-sm button {
+  height: 28px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-xs);
+}
+
+/* 繁忙度密度条：14 格，颜色深浅代表当天有多少事 */
+.density {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+}
+
+.density-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: var(--sp-1) 0;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  transition: transform var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.density-cell:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+}
+
+.density-cell[data-level="1"] { background: var(--accent-bg); }
+.density-cell[data-level="2"] { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.density-cell[data-level="3"] { background: color-mix(in srgb, var(--accent) 36%, transparent); }
+.density-cell[data-level="4"] { background: color-mix(in srgb, var(--warning) 42%, transparent); }
+
+.density-cell[data-today="true"] {
+  border-color: var(--accent);
+}
+
+.density-cell[data-weekend="true"] .density-day {
+  opacity: 0.55;
+}
+
+.density-day {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: 1;
+}
+
+.density-dots {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+}
+
+.density-dots i {
+  width: 3px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--text-subtle);
+}
+
+.density-dots i[data-kind="deadline"] {
+  background: var(--warning);
+}
+
+.density-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+.density-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.density-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  display: inline-block;
+  background: var(--accent);
+}
+
+.density-legend i[data-kind="deadline"] {
+  background: var(--warning);
+}
+
+/* 月历网格 */
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.cal-month {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+}
+
+.cal-stats {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+.cal-weekdays,
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-weekdays span {
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  padding-bottom: var(--sp-1);
+}
+
+.cal-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 46px;
+  padding: var(--sp-2) 2px var(--sp-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-elev);
+  transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.cal-cell:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.cal-cell[data-outside="true"] {
+  opacity: 0.35;
+}
+
+.cal-cell[data-past="true"] {
+  opacity: 0.55;
+}
+
+.cal-cell[data-today="true"] {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.cal-cell[data-conflict="true"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--warning);
+}
+
+.cal-day {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: 1;
+}
+
+.cal-marks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+
+.cal-marks i {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+
+.cal-marks i[data-kind="deadline"] {
+  background: var(--warning);
+}
+
+.cal-marks i[data-kind="expiry"] {
+  background: var(--danger);
+}
+
+.cal-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  color: var(--text-subtle);
+}
+
+/* 选中某天后的明细 */
+.cal-detail {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cal-detail-date {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+.cal-detail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  text-align: left;
+  font-size: var(--fs-xs);
+  color: var(--text);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.cal-detail-item:hover {
+  background: var(--surface-2);
+}
+
+.cal-detail-item svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.cal-detail-item[data-kind="deadline"] svg {
+  color: var(--warning);
+}
+
+.cal-detail-item[data-kind="expiry"] svg {
+  color: var(--danger);
+}
+
+.cal-detail-item em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
 }
 
 /* ================================ 提示条 ================================ */

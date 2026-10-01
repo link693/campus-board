@@ -119,15 +119,30 @@ test("每个 use href 引用的图标 symbol 都已定义", () => {
   assert(missing.length === 0, `未定义的图标：${missing.join(", ")}`);
 });
 
-test("每个图标 symbol 都声明了显式尺寸，避免被 max-width 撑满", () => {
+test("每个图标 symbol 都有 viewBox（缩放依据，缺了会导致变形）", () => {
+  // 注意：symbol 上不能写 width/height，否则视口被锁成 24 单位、
+  // 外层 svg 更小时会把图标裁切成残缺形状（曾经的真实缺陷）。
+  // stroke-width 含有 "width" 字样，必须用负向后顾排除。
   const symRe = /<symbol\b([^>]*)>/g;
   let mm;
   const bad = [];
+  let count = 0;
   while ((mm = symRe.exec(html))) {
+    count++;
     const attrs = mm[1];
-    if (!/\bwidth="/.test(attrs) || !/\bheight="/.test(attrs)) bad.push(attrs.trim());
+    if (!/\bviewBox="/.test(attrs)) bad.push(`缺少 viewBox：${attrs.trim().slice(0, 50)}`);
+    if (/(?<!-)\bwidth="/.test(attrs) || /(?<!-)\bheight="/.test(attrs)) {
+      bad.push(`不应声明尺寸：${attrs.trim().slice(0, 50)}`);
+    }
   }
-  assert(bad.length === 0, `缺少尺寸声明的 symbol：\n      ${bad.join("\n      ")}`);
+  assert(count > 15, `解析到的 symbol 数量异常：${count}`);
+  assert(bad.length === 0, `有问题的 symbol：\n      ${bad.join("\n      ")}`);
+});
+
+test("图标引用不写死尺寸，由 CSS 令牌控制", () => {
+  const bad = (html.match(/<use[^>]*(?<!-)\b(?:width|height)=/g) || []);
+  assert(bad.length === 0,
+    `use 元素不应声明尺寸（会让图标无法随外层缩放）：${bad.slice(0, 3).join(", ")}`);
 });
 
 test("组件样式层不存在任何硬编码颜色（必须走设计令牌）", () => {

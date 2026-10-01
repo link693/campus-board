@@ -286,6 +286,98 @@ test("时间戳格式符合 iCalendar 本地时间格式", () => {
   eq(logic.icsStamp(null), null);
 });
 
+/* ------------------------------------------------------- 日历视图与密度 */
+
+group("日历视图（界面创新）");
+
+test("月历按周一分栏，网格为整周", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY);
+  assert(grid, "应生成日历");
+  eq(grid.weekdayLabels.length, 7);
+  eq(grid.weekdayLabels[0], "一", "一周应从周一开始");
+  assert(grid.weeks.length >= 4 && grid.weeks.length <= 6, `周数应在 4—6 之间，实际 ${grid.weeks.length}`);
+  grid.weeks.forEach((w) => eq(w.length, 7, "每周应有 7 天"));
+});
+
+test("基准日当天被正确标记", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY);
+  const flat = grid.weeks.flat();
+  const todayCell = flat.find((c) => c.isToday);
+  assert(todayCell, "应存在今天这一格");
+  eq(todayCell.date, TODAY);
+  eq(todayCell.day, 19, "9 月 19 日应为 19 号");
+});
+
+test("9 月 19 日的格子包含当天三场活动与一个报名截止", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY);
+  const cell = grid.weeks.flat().find((c) => c.date === "2026-09-19");
+  assert(cell.entries.length >= 3, `当天条目应不少于 3 条，实际 ${cell.entries.length}`);
+  assert(cell.counts.session >= 3, "应至少有 3 场活动（前端交流会、AI 公开课、安全小组）");
+});
+
+test("9 月 21 日这个拥挤日期被标记为有冲突", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY);
+  const cell = grid.weeks.flat().find((c) => c.date === "2026-09-21");
+  assert(cell, "应有 9 月 21 日这一格");
+  eq(cell.hasConflict, true, "9/21 有 4 场活动时间重叠，应标记冲突");
+});
+
+test("网格包含上月末与下月初的补齐日期，且标记为非本月", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY);
+  const outside = grid.weeks.flat().filter((c) => !c.inMonth);
+  assert(outside.length > 0, "整周网格必然包含非本月日期");
+  outside.forEach((c) => {
+    const month = Number(c.date.slice(5, 7));
+    assert(month !== grid.month, `${c.date} 不应被算作本月`);
+  });
+});
+
+test("从未结束的活动不会取消网格生成；空月份也能正常返回结构", () => {
+  const grid = logic.buildCalendarGrid([], TODAY);
+  assert(grid, "没有活动时仍应返回日历结构");
+  eq(grid.stats.entries, 0);
+  grid.weeks.forEach((w) => eq(w.length, 7));
+});
+
+test("切换到下个月时，今天标记消失但结构仍然完整", () => {
+  const grid = logic.buildCalendarGrid(data.activities, TODAY, "2026-10");
+  eq(grid.month, 10);
+  assert(grid.label.indexOf("10 月") >= 0, `标签应体现月份，实际 ${grid.label}`);
+  eq(grid.weeks.flat().some((c) => c.isToday), false, "10 月不应有「今天」标记");
+  assert(grid.stats.entries > 0, "10 月应有内容（能力挑战赛截止、创新挑战作品提交等）");
+});
+
+group("繁忙度密度条");
+
+test("密度条覆盖未来 14 天，第一天是今天", () => {
+  const density = logic.buildDensity(data.activities, TODAY, 14);
+  eq(density.length, 14);
+  eq(density[0].isToday, true);
+  eq(density[0].date, TODAY);
+  assert(density[0].sessions >= 3, "今天有 3 场活动");
+});
+
+test("密度等级反映当天的活动与冲突数量", () => {
+  const density = logic.buildDensity(data.activities, TODAY, 14);
+  const d21 = density.find((d) => d.date === "2026-09-21");
+  assert(d21, "应包含 9 月 21 日");
+  assert(d21.conflicts > 0, "9/21 应统计出冲突");
+  assert(d21.level > 0, "繁忙度应大于 0");
+  density.forEach((d) => assert(d.level >= 0 && d.level <= 4, `等级应在 0—4，实际 ${d.level}`));
+});
+
+test("已结束的活动不计入密度", () => {
+  // 数学建模直播在 9/18 19:30；以 9/19 为基准日时它已经结束
+  const density = logic.buildDensity(data.activities, TODAY, 14);
+  const d18 = density.find((d) => d.date === "2026-09-18");
+  assert(!d18, "密度条只看未来，9/18 已过去不应出现");
+
+  // 反过来：以 9/17 为基准日时它尚未结束，应当计入
+  const before = logic.buildDensity(data.activities, "2026-09-17", 3);
+  const b18 = before.find((d) => d.date === "2026-09-18");
+  eq(b18.sessions, 1, "基准日为 9/17 时，9/18 的直播尚未结束，应计入");
+});
+
 /* -------------------------------------------------------------- 汇总 */
 
 console.log(`\n${"-".repeat(52)}`);

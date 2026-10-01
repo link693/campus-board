@@ -31,7 +31,8 @@
          否则合并逻辑不会保留它们（合并只认默认值里存在的键）。
          注意不能用 null 作默认值：合并会跳过 null，导致设置写不进去。 */
       baseline: "",
-      weeklyBudget: 0
+      weeklyBudget: 0,
+      timelineView: "list"
     }
   };
 

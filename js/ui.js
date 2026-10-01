@@ -944,6 +944,160 @@
     return box;
   }
 
+  /* ============================================================ 密度与日历 */
+
+  /**
+   * 繁忙度密度条：14 格，一眼看出哪几天最挤。
+   * 每格显示日期数字 + 用点的颜色区分"有活动"与"有截止"。
+   */
+  function renderDensity(container, density, handlers) {
+    container.textContent = "";
+    if (!density.length) return;
+
+    var peak = density.reduce(function (max, d) { return Math.max(max, d.load); }, 0);
+
+    density.forEach(function (d) {
+      var cell = el("button", "density-cell");
+      cell.type = "button";
+      cell.dataset.level = String(d.level);
+      cell.dataset.today = String(d.isToday);
+      cell.dataset.weekend = String(d.isWeekend);
+      cell.title = d.date + "（周" + d.weekday + "）：活动 " + d.sessions +
+        " 场，截止 " + d.deadlines + " 项" + (d.conflicts ? "，冲突 " + d.conflicts + " 处" : "");
+
+      cell.appendChild(el("span", "density-day", d.isToday ? "今" : String(d.day)));
+
+      var dots = el("span", "density-dots");
+      var total = Math.min(4, d.load);
+      for (var i = 0; i < total; i++) {
+        var dot = document.createElement("i");
+        dot.dataset.kind = i < d.sessions ? "session" : "deadline";
+        dots.appendChild(dot);
+      }
+      cell.appendChild(dots);
+
+      if (handlers && handlers.onPickDate) {
+        cell.addEventListener("click", function () { handlers.onPickDate(d.date); });
+      }
+      container.appendChild(cell);
+    });
+
+    if (peak >= 4) {
+      var legend = el("div", "density-legend");
+      [["session", "活动"], ["deadline", "报名截止"]].forEach(function (pair) {
+        var span = el("span");
+        var swatch = document.createElement("i");
+        swatch.dataset.kind = pair[0];
+        span.appendChild(swatch);
+        span.appendChild(el("span", null, pair[1]));
+        legend.appendChild(span);
+      });
+      container.parentNode.insertBefore(legend, container);
+    }
+  }
+
+  /**
+   * 月历视图：把活动摊到日历格子里。
+   * 列表只能按状态排序，看不出"某一天到底挤了多少事"；日历把时间维度直接画出来。
+   */
+  function renderCalendarView(container, grid, today, handlers) {
+    container.textContent = "";
+    if (!grid) return;
+
+    var wrap = el("div", "cal");
+
+    var head = el("div", "cal-head");
+    head.appendChild(el("span", "cal-month", grid.label));
+    head.appendChild(el("span", "cal-stats",
+      grid.stats.entries + " 个节点 · " + grid.stats.activeDays + " 天有事" +
+      (grid.stats.conflictDays ? " · " + grid.stats.conflictDays + " 天冲突" : "")));
+    wrap.appendChild(head);
+
+    var weekdays = el("div", "cal-weekdays");
+    grid.weekdayLabels.forEach(function (w) { weekdays.appendChild(el("span", null, w)); });
+    wrap.appendChild(weekdays);
+
+    grid.weeks.forEach(function (week) {
+      var row = el("div", "cal-week");
+      week.forEach(function (cell) {
+        var node = el("button", "cal-cell");
+        node.type = "button";
+        node.dataset.outside = String(!cell.inMonth);
+        node.dataset.past = String(cell.isPast && !cell.isToday);
+        node.dataset.today = String(cell.isToday);
+        node.dataset.conflict = String(cell.hasConflict);
+        node.title = cell.date + "：" + cell.entries.length + " 个节点" +
+          (cell.hasConflict ? "（存在时间冲突）" : "");
+
+        node.appendChild(el("span", "cal-day", String(cell.day)));
+
+        var marks = el("span", "cal-marks");
+        cell.entries.slice(0, 4).forEach(function (e) {
+          var dot = document.createElement("i");
+          dot.dataset.kind = e.kind;
+          marks.appendChild(dot);
+        });
+        node.appendChild(marks);
+
+        if (cell.entries.length > 4) {
+          node.appendChild(el("span", "cal-count", "+" + (cell.entries.length - 4)));
+        } else if (cell.entries.length) {
+          node.appendChild(el("span", "cal-count", String(cell.entries.length)));
+        }
+
+        node.addEventListener("click", function () { showDayDetail(wrap, cell, handlers); });
+        row.appendChild(node);
+      });
+      wrap.appendChild(row);
+    });
+
+    /* 默认展开今天，让日历打开就有内容 */
+    var todayCell = grid.weeks.reduce(function (found, w) {
+      return found || w.filter(function (c) { return c.isToday; })[0];
+    }, null);
+    if (todayCell) showDayDetail(wrap, todayCell, handlers);
+
+    container.appendChild(wrap);
+  }
+
+  function showDayDetail(wrap, cell, handlers) {
+    var old = wrap.querySelector(".cal-detail");
+    if (old) old.remove();
+
+    var box = el("div", "cal-detail");
+    box.appendChild(el("span", "cal-detail-date",
+      L.formatDate(cell.date) + " · " + (cell.entries.length ? cell.entries.length + " 个节点" : "没有安排")));
+
+    if (!cell.entries.length) {
+      box.appendChild(el("p", "filter-hint", "这一天没有活动、截止或失效提醒。"));
+    }
+
+    cell.entries.forEach(function (e) {
+      var item = el("button", "cal-detail-item");
+      item.type = "button";
+      item.dataset.kind = e.kind;
+      item.appendChild(icon(e.kind === "deadline" ? "i-clock" : e.kind === "expiry" ? "i-alert" : "i-play"));
+      item.appendChild(el("span", null, e.activity.title));
+      item.appendChild(el("em", null, e.kind === "session" ? e.label : e.label));
+      if (handlers && handlers.openDetail) {
+        item.addEventListener("click", function () { handlers.openDetail(e.activity.id); });
+      }
+      box.appendChild(item);
+    });
+
+    if (cell.hasConflict) {
+      var warn = el("div", "conflict");
+      var warnHead = el("div", "conflict-head");
+      warnHead.appendChild(icon("i-alert"));
+      warnHead.appendChild(el("span", null, "这一天存在时间冲突"));
+      warn.appendChild(warnHead);
+      warn.appendChild(el("p", "conflict-desc", "展开任一活动可看到具体重叠时段与需要取舍的选项。"));
+      box.appendChild(warn);
+    }
+
+    wrap.appendChild(box);
+  }
+
   /* ============================================================ 提示条 */
 
   function toast(container, message, tone, iconName) {
@@ -1015,6 +1169,8 @@
     renderBudget: renderBudget,
     renderExpiry: renderExpiry,
     renderConflicts: renderConflicts,
+    renderDensity: renderDensity,
+    renderCalendarView: renderCalendarView,
 
     deadlineText: deadlineText,
     scheduleText: scheduleText,

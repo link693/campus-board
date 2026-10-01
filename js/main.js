@@ -72,7 +72,11 @@
     budgetPanel: document.getElementById("budget-panel"),
     budgetBar: document.getElementById("budget-bar"),
     budgetBody: document.getElementById("budget-body"),
-    budgetNote: document.getElementById("budget-note")
+    budgetNote: document.getElementById("budget-note"),
+    /* 时间线视图切换与密度条 */
+    viewSwitch: document.getElementById("view-switch"),
+    density: document.getElementById("density"),
+    timelinePanel: document.getElementById("timeline")
   };
 
   /* 筛选状态：从本地恢复，保证刷新后一致。
@@ -81,7 +85,8 @@
     grade: 0,
     fromNow: true,
     baseline: TODAY,
-    weeklyBudget: 0
+    weeklyBudget: 0,
+    timelineView: "list"
   }, store.filters());
   if (!filters.baseline) filters.baseline = TODAY;
 
@@ -302,6 +307,11 @@
     dom.filtersCount.hidden = selectedCount === 0;
     dom.filtersToggle.setAttribute("aria-expanded", String(dom.moreFilters.dataset.open === "true"));
 
+    /* 时间线视图切换按钮的选中态 */
+    Array.prototype.forEach.call(dom.viewSwitch.querySelectorAll("button[data-view]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.view === filters.timelineView));
+    });
+
     dom.freshmanMode.setAttribute("aria-pressed", String(!!filters.freshman));
     dom.hideSuspicious.setAttribute("aria-pressed", String(!!filters.hideSuspicious));
     dom.fromNow.setAttribute("aria-pressed", String(!!filters.fromNow));
@@ -321,9 +331,24 @@
     handlers.conflictMap = buildConflictMap(activities);
     UI.renderFeed(dom.feed, L.bucketize(items, { hideEmpty: true }), baseline(), store, handlers);
 
-    /* 时间线 */
-    UI.renderTimeline(dom.timeline, timeline, store, handlers, baseline());
-    dom.timelineNote.textContent = timeline.all.length + " 个节点";
+    /* 时间线：列表 / 日历 双视图 */
+    if (filters.timelineView === "calendar") {
+      UI.renderCalendarView(dom.timeline, L.buildCalendarGrid(activities, baseline()), baseline(), handlers);
+      dom.timelineNote.textContent = "点任意日期查看当天安排；带橙色角标的日子存在时间冲突";
+    } else {
+      UI.renderTimeline(dom.timeline, timeline, store, handlers, baseline());
+      dom.timelineNote.textContent = timeline.all.length + " 个节点";
+    }
+
+    /* 繁忙度密度条：不点开任何东西也能看出哪几天最挤 */
+    UI.renderDensity(dom.density, L.buildDensity(activities, baseline(), 14), {
+      onPickDate: function (date) {
+        filters.timelineView = "calendar";
+        persistFilters();
+        render();
+        UI.toast(dom.toasts, "已切到日历并定位到 " + date, "accent", "i-calendar");
+      }
+    });
 
     /* 时间机器：未来几天的状态变化预演 */
     UI.renderMachine(dom.machineStrip, dom.machineNote, dom.machineDesc,
@@ -408,7 +433,8 @@
       grade: filters.grade,
       fromNow: filters.fromNow,
       baseline: filters.baseline,
-      weeklyBudget: filters.weeklyBudget
+      weeklyBudget: filters.weeklyBudget,
+      timelineView: filters.timelineView
     });
   }
 
@@ -716,6 +742,15 @@
   });
 
   dom.openPublish.addEventListener("click", function () { openPublish(null); });
+
+  /* 时间线视图切换：列表 / 日历 */
+  dom.viewSwitch.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-view]");
+    if (!btn) return;
+    filters.timelineView = btn.dataset.view;
+    persistFilters();
+    render();
+  });
 
   dom.filtersToggle.addEventListener("click", function () {
     var open = dom.moreFilters.dataset.open === "true";
