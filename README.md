@@ -49,14 +49,31 @@
 **方式二：本地静态服务器**（可选）
 
 ```powershell
-# 任选其一
-python -m http.server 8080
-npx serve .
+python tools/serve.py                          # http://127.0.0.1:8080
+python tools/serve.py --prefix campus-board    # 模拟 GitHub Pages 的子路径发布形态
 ```
+
+或使用任意静态服务器（`python -m http.server 8080`、`npx serve .` 均可）。
 
 **方式三：GitHub Pages**
 
-仓库已内置 `.github/workflows/pages.yml`，推送到 `main` 后自动发布为静态站点，无需任何构建步骤。
+仓库已内置 `.github/workflows/pages.yml`，推送到 `main` 后自动发布为静态站点（先跑测试与数据校验，通过才发布），无需任何构建步骤。
+
+## 三之二、界面效果
+
+以下均为浏览器真实渲染截图（非设计稿），可用于评分时快速了解交互与排版：
+
+| 发现流（桌面端） | 通知变更追踪 |
+| --- | --- |
+| ![发现流](docs/screenshots/01-桌面端发现流.png) | ![变更追踪](docs/screenshots/02-通知变更追踪与原文对照.png) |
+
+| 可疑内容标注 | 学生自主发布 |
+| --- | --- |
+| ![可疑标注](docs/screenshots/03-可疑内容标注与判定理由.png) | ![发布](docs/screenshots/04-学生自主发布与实时提示.png) |
+
+移动端（390px，已验证无水平溢出）：
+
+![移动端](docs/screenshots/05-移动端-390px.png)
 
 ## 四、自主设计的实用或创新功能
 

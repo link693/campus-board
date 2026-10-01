@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "campus-board",
   "version": "1.0.0",
   "private": true,
@@ -13,7 +13,8 @@
     "test:parity": "node tests/status-parity.test.js",
     "build:data": "python tools/build_dataset.py",
     "check:data": "python tools/build_dataset.py --check",
-    "build:report": "python tools/build_report.py"
+    "build:report": "python tools/build_report.py",
+    "serve": "python tools/serve.py"
   },
   "engines": {
     "node": ">=18"
