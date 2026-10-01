@@ -1,0 +1,346 @@
+/* ============================================================================
+   校园活动板 · 设计令牌
+   规则：界面中不允许出现本文件之外的临时字号、间距、圆角、阴影或颜色。
+   所有尺寸只允许取自下面的刻度，这是保证「元素和谐」的前提。
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------- 色彩 */
+  /* 三层结构：页面底色 → 抬升表面 → 次级表面 */
+  --bg: #0a0e15;
+  --bg-elev: #101724;
+  --surface-2: #16203180;
+  --surface-solid: #162031;
+  --border: #ffffff14;
+  --border-strong: #ffffff29;
+  --border-accent: #38e0d059;
+
+  --text: #e9eef7;
+  --text-muted: #9aa7bd;
+  --text-subtle: #6d7a91;
+
+  --accent: #38e0d0;
+  --accent-2: #8b7bff;
+  --success: #3ddc97;
+  --warning: #ffb454;
+  --danger: #ff6b81;
+  --info: #5aa9ff;
+  --neutral: #8b98ae;
+
+  /* 语义色对应的低透明底：用于徽标与提示条 */
+  --accent-bg: #38e0d01f;
+  --accent-2-bg: #8b7bff1f;
+  --success-bg: #3ddc971f;
+  --warning-bg: #ffb4541f;
+  --danger-bg: #ff6b811f;
+  --info-bg: #5aa9ff1f;
+  --neutral-bg: #8b98ae1a;
+
+  /* 背景装饰（网格与光晕） */
+  --grid-line: #ffffff08;
+  --glow-accent: #38e0d01a;
+  --glow-violet: #8b7bff1a;
+
+  /* 半透明层：遮罩、粘性顶栏、原文引用底 */
+  --overlay-backdrop: #04070ccc;
+  --topbar-bg: #0a0e15d9;
+  --quote-bg: #0a0e1580;
+
+  /* 强调色之上的前景色（按钮文字） */
+  --on-accent: #06131a;
+
+  /* 语义色的描边层级：统一 25% 透明度 */
+  --accent-border: #38e0d040;
+  --accent-2-border: #8b7bff40;
+  --success-border: #3ddc9740;
+  --warning-border: #ffb45440;
+  --danger-border: #ff6b8140;
+  --info-border: #5aa9ff40;
+
+  /* 语义色的强描边：用于输入错误态 */
+  --danger-border-strong: #ff6b8180;
+
+  /* 语义色的分隔线：用于时间线左侧 */
+  --accent-divider: #38e0d066;
+  --accent-2-divider: #8b7bff66;
+  --warning-divider: #ffb45466;
+
+  /* 语义提示条上的文字色 */
+  --warning-text: #ffe6c2;
+  --danger-text: #ffd7dd;
+
+  /* 焦点环 */
+  --ring: #38e0d066;
+  --ring-offset: 2px;
+
+  /* ---------------------------------------------------------- 字体与字号 */
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+    "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Cascadia Code", "JetBrains Mono", Consolas,
+    "Courier New", monospace;
+
+  /* 7 级流体阶梯：禁止使用中间值 */
+  --fs-xs: clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);   /* 12 → 13 */
+  --fs-sm: clamp(0.8125rem, 0.78rem + 0.12vw, 0.875rem); /* 13 → 14 */
+  --fs-base: clamp(0.875rem, 0.84rem + 0.14vw, 0.9688rem); /* 14 → 15.5 */
+  --fs-lg: clamp(1rem, 0.95rem + 0.22vw, 1.125rem);      /* 16 → 18 */
+  --fs-xl: clamp(1.1875rem, 1.1rem + 0.32vw, 1.375rem);  /* 19 → 22 */
+  --fs-2xl: clamp(1.5rem, 1.35rem + 0.6vw, 1.875rem);    /* 24 → 30 */
+  --fs-3xl: clamp(1.875rem, 1.7rem + 0.9vw, 2.5rem);     /* 30 → 40 */
+
+  /* 行高：只有 3 档语义 */
+  --lh-tight: 1.25;
+  --lh-snug: 1.45;
+  --lh-body: 1.7;
+
+  /* 字重：只有 3 档 */
+  --fw-body: 400;
+  --fw-strong: 600;
+  --fw-title: 700;
+
+  /* 字距：中文标题略微收紧，避免松散 */
+  --ls-title: -0.01em;
+  --ls-label: 0.02em;
+  --ls-caps: 0.08em;
+
+  /* ------------------------------------------------------------ 间距刻度 */
+  /* 4px 基准，只暴露 8 档 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* -------------------------------------------------------------- 圆角 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* -------------------------------------------------------------- 阴影 */
+  --sh-1: 0 1px 2px #0000004d, 0 8px 24px -18px #000000cc;
+  --sh-2: 0 6px 16px -6px #000000b3, 0 20px 48px -28px #000000e6;
+  --sh-3: 0 24px 64px -16px #000000f2, 0 2px 8px #00000080;
+  --ring-shadow: 0 0 0 3px var(--ring);
+
+  /* ------------------------------------------------------------ 动效 */
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 320ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ------------------------------------------------------- 尺寸与层级 */
+  --h-control: 40px;      /* 输入框、次级按钮 */
+  --h-control-lg: 44px;   /* 主操作按钮 */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --badge-h: 24px;
+
+  --w-max: 1200px;
+  --w-rail: 328px;
+  --w-prose: 68ch;
+
+  /* 断点（供 media query 参考，2026 年现代浏览器已可用变量语法时也保持一致）
+     640px 单列→多列；900px 出现侧栏；1200px 三列上限 */
+  --bp-md: 640px;
+  --bp-lg: 900px;
+  --bp-xl: 1200px;
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+/* ============================== 基础重置 ============================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* hidden 属性必须永远生效：
+   组件的 display:flex / grid 会覆盖浏览器默认的 [hidden]{display:none}，
+   这里显式兜底，避免"应该隐藏的元素却显示出来"。 */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-body);
+  line-height: var(--lh-body);
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60rem 40rem at 12% -8%, var(--glow-accent), transparent 60%),
+    radial-gradient(52rem 36rem at 92% 4%, var(--glow-violet), transparent 62%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: auto, auto, 48px 48px, 48px 48px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  body {
+    background-size: auto, auto, 32px 32px, 32px 32px;
+  }
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* 图标尺寸的兜底规则
+   全局的 max-width:100% 会让未声明尺寸的 SVG 撑满容器，
+   因此这里给所有图标 SVG 一个默认可视尺寸（24px，与 symbol 的属性一致），
+   再由各组件的 .x svg 规则覆盖为 16px / 20px / 24px 三档之一。
+   这样"忘记写规则"的后果只是尺寸偏大一档，而不会失控。 */
+svg:not([width]) {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex-shrink: 0;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 数字与时间统一使用等宽 + 表格数字，避免倒计时跳动 */
+.num,
+.dl-value,
+.kpi-value,
+.countdown,
+time,
+.tl-date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ============================== 可见焦点 ============================== */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: var(--ring-offset);
+  border-radius: var(--r-sm);
+}
+
+::selection {
+  background: var(--accent);
+  color: #05121a;
+}
+
+/* ============================== 滚动条 ============================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* ============================== 动效降级 ============================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 仅供屏幕阅读器 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: var(--z-toast);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}

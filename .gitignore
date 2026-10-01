@@ -22,3 +22,7 @@ _tmp/
 *.local.md
 _*.py
 _*.txt
+
+# 本地 QA 驱动器（由 _make_*.py 生成，仅用于截图与端到端验证，不属于交付物）
+qa-*.html
+_qa/

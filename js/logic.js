@@ -373,10 +373,21 @@
     var level = score >= THRESHOLD.suspicious ? "suspicious"
       : score >= THRESHOLD.attention ? "attention" : "clean";
 
+    /* 展示层去重：当已经有人工判定的"可疑"结论时，
+       运行时的细分特征只是重复同一个结论，界面上合并展示更清楚。
+       注意：去重只影响展示，评分与判定仍使用完整的 items。 */
+    var hasReviewedSuspicious = items.some(function (it) {
+      return it.origin === "reviewed" && it.code === "suspicious";
+    });
+    var displayed = hasReviewedSuspicious
+      ? items.filter(function (it) { return it.origin === "reviewed"; })
+      : items;
+
     return {
       score: score,
       level: level,
       signals: items,
+      displaySignals: displayed,
       isSuspicious: level === "suspicious",
       needsAttention: level !== "clean"
     };
