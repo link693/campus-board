@@ -150,11 +150,12 @@
 
   /* ============================================================ 卡片 */
 
-  function renderCard(item, today, store, handlers) {
+  function renderCard(item, today, store, handlers, conflicts) {
     var act = item.activity;
     var status = item.status;
     var cred = item.credibility;
     var isUser = act.source.type === "user";
+    var conflictList = conflicts || [];
 
     var card = el("article", "card");
     card.dataset.id = act.id;
@@ -172,6 +173,13 @@
       meta.appendChild(badge("可疑信息", "danger", "i-alert"));
     } else if (cred.level === "attention") {
       meta.appendChild(badge("需注意", "warning", "i-info"));
+    }
+    if (conflictList.length) {
+      meta.appendChild(badge("时间冲突 " + conflictList.length, "warning", "i-alert"));
+    }
+    var expiry = L.computeExpiry(act, today);
+    if (expiry && !expiry.expired) {
+      meta.appendChild(badge(expiry.daysLeft + " 天后失效", "danger", "i-clock"));
     }
     top.appendChild(meta);
     card.appendChild(top);
@@ -278,6 +286,9 @@
       return;
     }
 
+    /* 撞车只算一次：由控制器预先算好整张映射表，卡片按 id 取用 */
+    var conflictMap = (handlers && handlers.conflictMap) || {};
+
     visible.forEach(function (group) {
       var section = el("section", "bucket");
       section.dataset.bucket = group.code;
@@ -293,7 +304,7 @@
 
       var grid = el("div", "cards");
       group.items.forEach(function (item) {
-        grid.appendChild(renderCard(item, today, store, handlers));
+        grid.appendChild(renderCard(item, today, store, handlers, conflictMap[item.activity.id] || []));
       });
       section.appendChild(grid);
       container.appendChild(section);
@@ -356,6 +367,16 @@
     if (cred.level !== "clean") {
       body.appendChild(renderTrust(cred));
     }
+
+    /* 时间冲突：材料里真实存在但列表看不出来的问题 */
+    if (handlers.conflicts && handlers.conflicts.length) {
+      var conflictBox = renderConflicts(handlers.conflicts, handlers);
+      if (conflictBox) body.appendChild(conflictBox);
+    }
+
+    /* 时效预警：如 17 号资料的提取信息有效期 */
+    var expiryBox = renderExpiry(L.computeExpiry(act, today));
+    if (expiryBox) body.appendChild(expiryBox);
 
     /* 关键信息 */
     var infoSection = el("section", "section");
@@ -495,6 +516,30 @@
 
     foot.appendChild(favBtn);
     foot.appendChild(regBtn);
+
+    /* 日历导出：零后端、零权限，双击即可导入手机日历。
+       这是"怕忘记截止时间"最直接有效的解法。 */
+    if (L.sessionWindow(act) || act.registration.deadlineAt) {
+      var icsBtn = el("button", "btn btn-block");
+      icsBtn.type = "button";
+      icsBtn.title = "下载 .ics 文件，双击即可导入手机或电脑日历";
+      icsBtn.appendChild(icon("i-calendar"));
+      icsBtn.appendChild(el("span", null, "加入日历"));
+      icsBtn.addEventListener("click", function () {
+        var ics = L.buildCalendar([act], today);
+        var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = act.id + ".ics";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        if (handlers.onExport) handlers.onExport(act);
+      });
+      foot.appendChild(icsBtn);
+    }
   }
 
   function renderTrust(cred) {
@@ -695,6 +740,210 @@
     return section;
   }
 
+  /* ============================================================ 时间机器 */
+
+  /**
+   * 把「未来几天会发生什么」渲染成一条可横向滚动的日程带。
+   * 每张卡是一个日期，卡内是该日将发生的节点：报名截止、活动开始、信息失效。
+   */
+  function renderMachine(container, noteEl, descEl, transitions, today, handlers) {
+    container.textContent = "";
+
+    if (!transitions.length) {
+      noteEl.textContent = "无";
+      descEl.textContent = "以当前基准日往后看，未来一段时间内没有安排变化。";
+      container.appendChild(el("p", "machine-empty", "可以试试把「今天」调早几天，或清空筛选条件。"));
+      return;
+    }
+
+    var changed = transitions.filter(function (t) { return t.changes; }).length;
+    noteEl.textContent = transitions.length + " 个节点" + (changed ? "，其中 " + changed + " 个会改变状态" : "");
+    descEl.textContent = "所有状态都是按当前基准日算出来的。这里把未来几天的变化提前告诉你——" +
+      "哪条会截止、哪天会开始、哪份资料会失效。";
+
+    /* 按日期分组 */
+    var groups = [];
+    var index = {};
+    transitions.forEach(function (t) {
+      var key = t.offsetDays + "|" + L.isoDatePart(t.at);
+      if (!index[key]) {
+        index[key] = { offset: t.offsetDays, date: L.isoDatePart(t.at), items: [] };
+        groups.push(index[key]);
+      }
+      index[key].items.push(t);
+    });
+
+    groups.forEach(function (g) {
+      var day = el("div", "machine-day");
+
+      var head = el("div", "machine-day-head");
+      head.appendChild(el("span", "machine-day-date", L.formatDate(g.date)));
+      head.appendChild(el("span", "machine-day-offset",
+        g.offset === 1 ? "明天" : g.offset + " 天后"));
+      day.appendChild(head);
+
+      g.items.forEach(function (t) {
+        var item = el("button", "machine-item");
+        item.type = "button";
+        item.dataset.kind = t.kind;
+        item.appendChild(icon(t.kind === "deadline" ? "i-clock"
+          : t.kind === "expiry" ? "i-alert" : "i-play"));
+
+        var body = el("div", "machine-item-body");
+        var label = t.kindLabel + (t.kind === "deadline" || t.kind === "session"
+          ? " · " + (L.formatTime(t.at) || "") : "");
+        body.appendChild(el("span", "machine-item-label", label.trim()));
+        body.appendChild(el("span", "machine-item-title", t.activity.title));
+        if (t.changes) {
+          body.appendChild(el("span", "machine-item-change",
+            t.fromStatus.label + " → " + t.toStatus.label));
+        }
+        item.appendChild(body);
+
+        item.addEventListener("click", function () { handlers.openDetail(t.activity.id); });
+        day.appendChild(item);
+      });
+
+      container.appendChild(day);
+    });
+  }
+
+  /* ============================================================ 精力预算 */
+
+  function renderBudget(panel, barEl, bodyEl, noteEl, budget, handlers) {
+    /* 预算为 0 时整块隐藏；取消 hidden 后由 .panel 内既有块级结构自然纵向排列，
+       不需要额外内联样式 */
+    panel.hidden = !(budget && budget.budget > 0);
+    if (panel.hidden) return;
+
+    barEl.textContent = "";
+    bodyEl.textContent = "";
+
+    var ratio = budget.budget > 0 ? Math.min(1, budget.committedHours / budget.budget) : 0;
+    var meter = el("div", "budget-meter");
+    var fill = el("div", "budget-fill");
+    fill.style.width = Math.round(ratio * 100) + "%";
+    fill.dataset.over = String(budget.over);
+    meter.appendChild(fill);
+    barEl.appendChild(meter);
+
+    var legend = el("div", "budget-legend");
+    legend.appendChild(el("span", null, "已投入 " + budget.committedHours + " 小时"));
+    legend.appendChild(el("span", null, "预算 " + budget.budget + " 小时"));
+    barEl.appendChild(legend);
+
+    noteEl.textContent = budget.committedCount + " 项在「我要参加」里";
+
+    /* 数字概要 */
+    var numbers = el("div", "budget-numbers");
+    var stats = [
+      { label: "已在「我要参加」", value: budget.committedCount + " 项", tone: null },
+      { label: "已投入时间", value: budget.committedHours + " 小时/周",
+        tone: budget.over ? "danger" : "accent" },
+      { label: "剩余预算", value: (budget.remaining >= 0 ? budget.remaining : budget.remaining) + " 小时/周",
+        tone: budget.remaining < 0 ? "danger" : null }
+    ];
+    stats.forEach(function (s) {
+      var stat = el("div", "budget-stat");
+      stat.appendChild(el("span", "budget-stat-label", s.label));
+      var v = el("span", "budget-stat-value", s.value);
+      if (s.tone) v.dataset.tone = s.tone;
+      stat.appendChild(v);
+      numbers.appendChild(stat);
+    });
+    bodyEl.appendChild(numbers);
+
+    /* 建议 */
+    if (budget.over) {
+      var advice = el("div", "budget-advice");
+      advice.appendChild(el("strong", null, "按当前预算排不下。"));
+      advice.appendChild(document.createTextNode(
+        " 你标记参加的机会合计每周需要 " + budget.committedHours + " 小时，超出预算 " +
+        Math.abs(budget.remaining) + " 小时。"));
+      bodyEl.appendChild(advice);
+
+      if (budget.suggestion.length) {
+        bodyEl.appendChild(el("p", "filter-hint",
+          "若只保留下面这些，每周共 " + budget.suggestionHours + " 小时，能塞进预算："));
+        var picks = el("div", "budget-picks");
+        budget.suggestion.forEach(function (it) {
+          var chip = el("button", "chip");
+          chip.type = "button";
+          chip.appendChild(icon("i-check"));
+          chip.appendChild(el("span", null,
+            it.activity.title + " · " + it.activity.eligibility.weeklyHours + "h"));
+          chip.addEventListener("click", function () { handlers.openDetail(it.activity.id); });
+          picks.appendChild(chip);
+        });
+        bodyEl.appendChild(picks);
+      }
+    } else if (budget.committedCount > 0) {
+      var ok = el("div", "budget-advice");
+      ok.dataset.tone = "accent";
+      ok.appendChild(el("strong", null, "排得下。"));
+      ok.appendChild(document.createTextNode(
+        " 已投入 " + budget.committedHours + " 小时，还剩 " + budget.remaining + " 小时/周。"));
+      if (budget.availableCount > budget.committedCount) {
+        ok.appendChild(document.createTextNode(
+          " 还有 " + (budget.availableCount - budget.committedCount) + " 项有时间投入要求的机会未标记。"));
+      }
+      bodyEl.appendChild(ok);
+    } else {
+      bodyEl.appendChild(el("p", "filter-hint",
+        "在卡片上点「我要参加」，这里会帮你核算每周时间是否排得下。" +
+        "材料中有 3 项机会写明了每周投入要求（4 / 5 / 6 小时）。"));
+    }
+  }
+
+  /* ============================================================ 时效与撞车 */
+
+  function renderExpiry(expiry) {
+    if (!expiry) return null;
+    var box = el("div", "expiry");
+    box.dataset.tone = expiry.expired ? "danger" : "warning";
+    box.appendChild(icon(expiry.expired ? "i-alert" : "i-clock"));
+    var text = expiry.expired
+      ? "该信息的有效期已过（" + L.formatDate(expiry.at) + "），需要等待主办方更新。"
+      : "这条信息在 " + L.formatDate(expiry.at) + " 后失效（还有 " + expiry.daysLeft + " 天）。";
+    var wrap = el("div");
+    wrap.appendChild(el("strong", null, expiry.expired ? "已失效 " : "时效提醒 "));
+    wrap.appendChild(document.createTextNode(text));
+    if (expiry.note) wrap.appendChild(el("div", "change-note", "原文：" + expiry.note));
+    box.appendChild(wrap);
+    return box;
+  }
+
+  function renderConflicts(conflicts, handlers) {
+    if (!conflicts.length) return null;
+    var sameDay = conflicts.filter(function (c) { return c.severity === "conflict"; });
+    var box = el("div", "conflict");
+
+    var head = el("div", "conflict-head");
+    head.appendChild(icon("i-alert"));
+    head.appendChild(el("span", null,
+      sameDay.length ? "时间冲突（" + conflicts.length + " 项）" : "时间相近（" + conflicts.length + " 项）"));
+    box.appendChild(head);
+
+    box.appendChild(el("p", "conflict-desc",
+      sameDay.length
+        ? "以下机会与这条在时间上重叠，需要二选一或提前与主办方确认能否兼顾："
+        : "以下机会时间接近，注意赶场："));
+    var list = el("div", "conflict-list");
+
+    conflicts.forEach(function (c) {
+      var item = el("button", "conflict-item");
+      item.type = "button";
+      item.appendChild(el("time", null, c.range + (c.sameDay ? "" : "（" + L.formatDate(c.activity.schedule.firstSessionAt) + "）")));
+      item.appendChild(el("span", null, c.activity.title));
+      item.appendChild(el("em", null, c.reason));
+      item.addEventListener("click", function () { handlers.openDetail(c.activity.id); });
+      list.appendChild(item);
+    });
+
+    box.appendChild(list);
+    return box;
+  }
+
   /* ============================================================ 提示条 */
 
   function toast(container, message, tone, iconName) {
@@ -760,6 +1009,12 @@
     renderStatusFilter: renderStatusFilter,
     renderChips: renderChips,
     toast: toast,
+
+    /* 创新功能 */
+    renderMachine: renderMachine,
+    renderBudget: renderBudget,
+    renderExpiry: renderExpiry,
+    renderConflicts: renderConflicts,
 
     deadlineText: deadlineText,
     scheduleText: scheduleText,

@@ -10,13 +10,17 @@
     "rawRecordCount": 26,
     "activityCount": 24,
     "compiledNote": "26 条原始信息中，09 为 01 的补充通知、20 为 03 的补充说明，按同一事项合并，故得到 24 个条目；两条原始信息均保留在 relatedRefs 与 updates 中，未丢弃任何字段。",
-    "fabricationPolicy": "题目未提供的信息一律为 null 并显式标注，任何字段都不得由推断填充。"
+    "fabricationPolicy": "题目未提供的信息一律为 null 并显式标注，任何字段都不得由推断填充。",
+    "scheduleDurationNote": "schedule.durationHours 为单场时长（小时）。原文给出时段的用真实值，未给出的按同类活动常规估算并在 durationNote 中标注为估算，仅用于撞车检测，不作为事实呈现。",
+    "weeklyHoursNote": "eligibility.weeklyHours 来自材料中明确写出的每周时间投入要求（4/5/6 小时），用于「精力预算」功能；未写明的条目为 null，不参与预算计算。"
   },
   "activities": [
     {
       "id": "lanqiao-training-camp",
       "sourceRef": "01",
-      "relatedRefs": ["09"],
+      "relatedRefs": [
+        "09"
+      ],
       "rawSummary": "9月24日22:00报名截止；原计划9月20日起每周六19:00训练；面向全校学生；零基础可参加",
       "title": "“蓝桥杯”程序设计校内训练营",
       "source": {
@@ -26,7 +30,12 @@
         "publisherNote": "题目未标注主办方，未作推断"
       },
       "category": "competition-training",
-      "tags": ["蓝桥杯", "程序设计", "零基础可参加", "长期训练"],
+      "tags": [
+        "蓝桥杯",
+        "程序设计",
+        "零基础可参加",
+        "长期训练"
+      ],
       "summary": "面向全校学生的算法与程序设计训练营，零基础可参加，每周六晚训练。",
       "detail": "为参加「蓝桥杯」程序设计竞赛组织的校内训练营。零基础可参加，需要在 9 月 24 日 22:00 前完成报名。",
       "registration": {
@@ -54,14 +63,21 @@
         },
         "location": "实验楼A402",
         "locationNote": "由 09 号补充通知明确，原地点未标注",
-        "durationHours": null,
+        "durationHours": 2,
+        "durationNote": "原文未给出单次训练时长，按讲座/训练类活动的常规 2 小时估算，仅用于撞车检测，界面会标注为估算值",
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["零基础可参加"]
+        "otherConditions": [
+          "零基础可参加"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -69,7 +85,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["主办方", "报名方式", "费用信息", "原活动地点"],
+      "missingFields": [
+        "主办方",
+        "报名方式",
+        "费用信息",
+        "原活动地点"
+      ],
       "riskFlags": [
         {
           "code": "schedule-conflict",
@@ -116,7 +137,11 @@
         "publisherNote": "由信息中的场地与面向对象推断为学院发布"
       },
       "category": "lecture",
-      "tags": ["AI", "入门", "无需报名"],
+      "tags": [
+        "AI",
+        "入门",
+        "无需报名"
+      ],
       "summary": "AI 应用入门讲座，无需报名，直接到场。",
       "detail": "面向全校学生的 AI 应用入门公开课，无需报名，预计时长 90 分钟。",
       "registration": {
@@ -141,13 +166,18 @@
         "locationNote": null,
         "durationHours": 1.5,
         "durationText": "预计90分钟",
-        "allDay": false
+        "allDay": false,
+        "durationNote": "原文给出了明确时段"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -155,14 +185,19 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["具体教室", "费用信息"],
+      "missingFields": [
+        "具体教室",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
     {
       "id": "innovation-team-recruit",
       "sourceRef": "03",
-      "relatedRefs": ["20"],
+      "relatedRefs": [
+        "20"
+      ],
       "rawSummary": "招募开发、设计、材料成员；每周需稳定投入4小时以上；9月22日18:00截止；需提交简短自我介绍",
       "title": "大学生创新创业项目团队招募",
       "source": {
@@ -172,7 +207,13 @@
         "publisherNote": "题目未标注发布单位，未作推断"
       },
       "category": "recruitment",
-      "tags": ["创新创业", "组队", "开发", "设计", "材料"],
+      "tags": [
+        "创新创业",
+        "组队",
+        "开发",
+        "设计",
+        "材料"
+      ],
       "summary": "创新创业项目团队补充成员，每周需稳定投入 4 小时以上。",
       "detail": "创新创业项目团队招募成员，方向包括开发、设计、材料。要求每周稳定投入 4 小时以上，需提交简短自我介绍。",
       "registration": {
@@ -182,7 +223,9 @@
         "deadlineText": "9月22日18:00截止",
         "method": "提交简短自我介绍",
         "methodNote": "未说明提交渠道",
-        "prerequisites": ["每周需稳定投入4小时以上"],
+        "prerequisites": [
+          "每周需稳定投入4小时以上"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -199,10 +242,17 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["每周可稳定投入 4 小时以上"]
+        "otherConditions": [
+          "每周可稳定投入 4 小时以上"
+        ],
+        "weeklyHours": 4,
+        "weeklyHoursText": "每周需稳定投入4小时以上"
       },
       "capacity": {
         "limit": null,
@@ -217,7 +267,11 @@
           }
         ]
       },
-      "missingFields": ["发布单位", "自我介绍提交渠道", "费用信息"],
+      "missingFields": [
+        "发布单位",
+        "自我介绍提交渠道",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": [
         {
@@ -247,7 +301,11 @@
         "publisherNote": "题目未标注发布单位，未作推断"
       },
       "category": "lecture",
-      "tags": ["数学建模", "经验分享", "直播回放"],
+      "tags": [
+        "数学建模",
+        "经验分享",
+        "直播回放"
+      ],
       "summary": "分享会直播已于 9 月 18 日结束，活动方预计 9 月 20 日上传回放。",
       "detail": "数学建模竞赛经验分享会，不限专业。直播已于 9 月 18 日 19:30 结束，活动方预计 9 月 20 日上传回放，回放入口未提供。",
       "registration": {
@@ -270,14 +328,21 @@
         "recurrence": null,
         "location": null,
         "locationNote": "线上直播，未提供观看地址",
-        "durationHours": null,
+        "durationHours": 2,
+        "durationNote": "分享会未给出时长，按常规 2 小时估算",
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["不限专业"]
+        "otherConditions": [
+          "不限专业"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -285,7 +350,11 @@
         "text": "线上直播，未标注人数上限",
         "full": false
       },
-      "missingFields": ["发布单位", "直播与回放地址", "费用信息"],
+      "missingFields": [
+        "发布单位",
+        "直播与回放地址",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -302,7 +371,11 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "volunteer",
-      "tags": ["志愿服务", "公益", "志愿时长"],
+      "tags": [
+        "志愿服务",
+        "公益",
+        "志愿时长"
+      ],
       "summary": "校园公益志愿服务，预计服务 8 小时，需提前到场签到。",
       "detail": "校园公益志愿服务活动，活动时长 8:30—17:00，预计服务 8 小时。报名截止 9 月 20 日 12:00，需提前到场签到。",
       "registration": {
@@ -312,7 +385,9 @@
         "deadlineText": "9月20日12:00报名截止",
         "method": null,
         "methodNote": "报名方式未提供",
-        "prerequisites": ["需提前到场签到"],
+        "prerequisites": [
+          "需提前到场签到"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -325,14 +400,19 @@
         "recurrence": null,
         "location": null,
         "locationNote": "活动地点未提供",
-        "durationHours": 8,
-        "allDay": false
+        "durationHours": 8.5,
+        "allDay": false,
+        "durationNote": "原文给出了明确时段"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -340,7 +420,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["主办单位", "活动地点", "报名方式", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "活动地点",
+        "报名方式",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -357,7 +442,12 @@
         "publisherNote": "题目未标注组织方，未作推断"
       },
       "category": "study-group",
-      "tags": ["Web开发", "零基础", "学习小组", "限30人"],
+      "tags": [
+        "Web开发",
+        "零基础",
+        "学习小组",
+        "限30人"
+      ],
       "summary": "零基础 Web 开发学习小组，共 6 周，限 30 人，满员即止。",
       "detail": "面向零基础学生的 Web 开发学习小组，9 月 23 日起每周三 19:30 开展，共 6 周，限 30 人。报名时间未注明，满员即止。",
       "registration": {
@@ -367,7 +457,9 @@
         "deadlineText": "报名时间未注明，满员即止",
         "method": null,
         "methodNote": "报名方式未提供",
-        "prerequisites": ["零基础可参加"],
+        "prerequisites": [
+          "零基础可参加"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -389,10 +481,16 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["零基础可参加"]
+        "otherConditions": [
+          "零基础可参加"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": 30,
@@ -401,7 +499,13 @@
         "full": false,
         "caveat": "满员即止，而报名时间未注明，存在错过风险"
       },
-      "missingFields": ["组织方", "报名方式", "报名开始时间", "活动地点", "费用信息"],
+      "missingFields": [
+        "组织方",
+        "报名方式",
+        "报名开始时间",
+        "活动地点",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "vague-deadline",
@@ -425,7 +529,12 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "competition",
-      "tags": ["AI", "竞赛", "组队", "两阶段"],
+      "tags": [
+        "AI",
+        "竞赛",
+        "组队",
+        "两阶段"
+      ],
       "summary": "两阶段竞赛：先完成校内意向登记，再提交作品，登记不等于提交。",
       "detail": "AI 创新应用挑战赛，2—4 人组队。需在 9 月 21 日 18:00 前完成校内意向登记，10 月 20 日提交作品。意向登记不等同于最终作品提交。",
       "registration": {
@@ -435,7 +544,9 @@
         "deadlineText": "9月21日18:00前完成校内意向登记",
         "method": null,
         "methodNote": "登记方式未提供",
-        "prerequisites": ["2—4人组队"],
+        "prerequisites": [
+          "2—4人组队"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -452,10 +563,16 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["2—4人组队参加"]
+        "otherConditions": [
+          "2—4人组队参加"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -463,7 +580,12 @@
         "text": "未标注队伍数量上限",
         "full": false
       },
-      "missingFields": ["主办单位", "意向登记方式", "作品提交渠道", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "意向登记方式",
+        "作品提交渠道",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "two-stage",
@@ -487,7 +609,13 @@
         "publisherNote": "题目未标注发布方，未作推断"
       },
       "category": "recruitment",
-      "tags": ["项目组", "开发", "Git", "长期招募", "大一可参加"],
+      "tags": [
+        "项目组",
+        "开发",
+        "Git",
+        "长期招募",
+        "大一可参加"
+      ],
       "summary": "开发校园实用工具的项目组，长期招募，面向大一、大二学生。",
       "detail": "校园软件项目组招募，方向为开发校园实用工具。面向大一、大二学生，希望成员了解 Git 基本操作，每周预计投入 5 小时。长期招募，满员即止。",
       "registration": {
@@ -497,7 +625,9 @@
         "deadlineText": "长期招募，满员即止",
         "method": null,
         "methodNote": "报名方式未提供",
-        "prerequisites": ["希望了解 Git 基本操作"],
+        "prerequisites": [
+          "希望了解 Git 基本操作"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -514,10 +644,18 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 2],
+        "gradeRange": [
+          1,
+          2
+        ],
         "openToAll": false,
         "majors": null,
-        "otherConditions": ["每周预计投入 5 小时", "希望了解 Git 基本操作"]
+        "otherConditions": [
+          "每周预计投入 5 小时",
+          "希望了解 Git 基本操作"
+        ],
+        "weeklyHours": 5,
+        "weeklyHoursText": "每周预计投入5小时"
       },
       "capacity": {
         "limit": null,
@@ -526,7 +664,12 @@
         "full": false,
         "caveat": "长期招募但满员即止，无法预知剩余名额"
       },
-      "missingFields": ["发布方", "报名方式", "名额数量", "费用信息"],
+      "missingFields": [
+        "发布方",
+        "报名方式",
+        "名额数量",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -543,7 +686,12 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "lecture",
-      "tags": ["前端", "经验交流", "线上同步", "无需报名"],
+      "tags": [
+        "前端",
+        "经验交流",
+        "线上同步",
+        "无需报名"
+      ],
       "summary": "前端开发经验交流，线下 A201 与线上直播同步，无需报名。",
       "detail": "前端开发经验交流会，9 月 19 日 15:00—16:30 举行，线下地点 A201，同步线上直播。无需报名。",
       "registration": {
@@ -567,13 +715,18 @@
         "location": "A201（线下）",
         "locationNote": null,
         "durationHours": 1.5,
-        "allDay": false
+        "allDay": false,
+        "durationNote": "原文给出了明确时段"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -581,7 +734,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["主办单位", "线上直播入口", "A201 所属楼栋", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "线上直播入口",
+        "A201 所属楼栋",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -598,7 +756,11 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "lecture",
-      "tags": ["科研入门", "论文检索", "导师联系"],
+      "tags": [
+        "科研入门",
+        "论文检索",
+        "导师联系"
+      ],
       "summary": "科研入门分享，介绍论文检索、学生科研项目与导师联系方法。",
       "detail": "面向全校学生的科研入门分享会，9 月 21 日 19:00—20:30 举行，内容包括论文检索、学生科研项目与导师联系方法。",
       "registration": {
@@ -622,13 +784,18 @@
         "location": null,
         "locationNote": "活动地点未提供",
         "durationHours": 1.5,
-        "allDay": false
+        "allDay": false,
+        "durationNote": "原文给出了明确时段"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -636,7 +803,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["主办单位", "活动地点", "是否需要报名", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "活动地点",
+        "是否需要报名",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -653,7 +825,11 @@
         "publisherNote": "题目未标注组织单位，未作推断"
       },
       "category": "competition",
-      "tags": ["竞赛", "个人参赛", "本科生"],
+      "tags": [
+        "竞赛",
+        "个人参赛",
+        "本科生"
+      ],
       "summary": "面向本科生的计算机能力挑战赛，个人参赛，费用信息未提供。",
       "detail": "全国高校计算机能力挑战赛，面向本科生，个人参赛，10 月 5 日 23:59 报名截止。具体费用信息未提供。",
       "registration": {
@@ -663,7 +839,9 @@
         "deadlineText": "10月5日23:59报名截止",
         "method": null,
         "methodNote": "报名方式未提供",
-        "prerequisites": ["个人参赛"],
+        "prerequisites": [
+          "个人参赛"
+        ],
         "fee": null,
         "feeNote": "具体费用信息未提供",
         "evidenceRef": null
@@ -680,10 +858,17 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": false,
         "majors": null,
-        "otherConditions": ["面向本科生", "个人参赛"]
+        "otherConditions": [
+          "面向本科生",
+          "个人参赛"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -691,7 +876,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["组织单位", "报名方式", "比赛时间地点", "费用信息"],
+      "missingFields": [
+        "组织单位",
+        "报名方式",
+        "比赛时间地点",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "missing-fee",
@@ -715,7 +905,12 @@
         "publisherNote": "题目未标注招募方，未作推断"
       },
       "category": "recruitment",
-      "tags": ["科研", "助理", "限大二及以上", "每周6小时"],
+      "tags": [
+        "科研",
+        "助理",
+        "限大二及以上",
+        "每周6小时"
+      ],
       "summary": "协助数据整理与实验工作的科研助理岗位，仅限大二及以上学生。",
       "detail": "科研助理招募，工作内容为协助数据整理和实验工作。仅限大二及以上学生，每周预计投入 6 小时，9 月 21 日截止报名。",
       "registration": {
@@ -726,7 +921,9 @@
         "deadlinePrecision": "day",
         "method": null,
         "methodNote": "报名方式未提供",
-        "prerequisites": ["仅限大二及以上学生"],
+        "prerequisites": [
+          "仅限大二及以上学生"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": null
@@ -743,10 +940,17 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [2, 4],
+        "gradeRange": [
+          2,
+          4
+        ],
         "openToAll": false,
         "majors": null,
-        "otherConditions": ["每周预计投入 6 小时"]
+        "otherConditions": [
+          "每周预计投入 6 小时"
+        ],
+        "weeklyHours": 6,
+        "weeklyHoursText": "每周预计投入6小时"
       },
       "capacity": {
         "limit": null,
@@ -754,7 +958,12 @@
         "text": "未标注名额",
         "full": false
       },
-      "missingFields": ["招募方", "报名方式", "岗位数量", "费用信息"],
+      "missingFields": [
+        "招募方",
+        "报名方式",
+        "岗位数量",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "day-precision",
@@ -778,7 +987,13 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "workshop",
-      "tags": ["Git", "GitHub", "大一新生", "限40人", "需预约"],
+      "tags": [
+        "Git",
+        "GitHub",
+        "大一新生",
+        "限40人",
+        "需预约"
+      ],
       "summary": "面向前大一新生的 Git/GitHub 零基础工作坊，限 40 人，需提前预约。",
       "detail": "Git 与 GitHub 零基础工作坊，9 月 21 日 19:00—20:30 举行，主要面向大一新生，限 40 人。需提前预约，提交报名表不代表最终录取，以审核通知为准。",
       "registration": {
@@ -788,7 +1003,9 @@
         "deadlineText": "需提前预约，未标注预约截止时间",
         "method": "提前预约并提交报名表",
         "methodNote": "预约渠道未提供",
-        "prerequisites": ["提交报名表后需等待审核通知"],
+        "prerequisites": [
+          "提交报名表后需等待审核通知"
+        ],
         "fee": null,
         "feeNote": "费用信息未提供",
         "evidenceRef": "提交报名表不代表最终录取，以审核通知为准"
@@ -802,13 +1019,20 @@
         "location": null,
         "locationNote": "活动地点未提供",
         "durationHours": 1.5,
-        "allDay": false
+        "allDay": false,
+        "durationNote": "原文给出了明确时段"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": false,
         "majors": null,
-        "otherConditions": ["主要面向大一新生，其他年级未明确排除"]
+        "otherConditions": [
+          "主要面向大一新生，其他年级未明确排除"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": 40,
@@ -817,7 +1041,13 @@
         "full": false,
         "caveat": "需审核，提交报名表不等于录取"
       },
-      "missingFields": ["主办单位", "预约渠道", "预约截止时间", "活动地点", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "预约渠道",
+        "预约截止时间",
+        "活动地点",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "approval-required",
@@ -841,7 +1071,12 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "competition",
-      "tags": ["AI", "创意方案", "两阶段", "可个人参加"],
+      "tags": [
+        "AI",
+        "创意方案",
+        "两阶段",
+        "可个人参加"
+      ],
       "summary": "两阶段挑战：先提交创意方案，再提交最终作品，个人或团队均可参加。",
       "detail": "AI 应用创意挑战，允许个人或团队参加。9 月 23 日 23:59 前提交创意方案，9 月 30 日前提交最终作品，进入展示环节后可再组队。",
       "registration": {
@@ -868,10 +1103,17 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["允许个人或团队参加", "进入展示环节后可再组队"]
+        "otherConditions": [
+          "允许个人或团队参加",
+          "进入展示环节后可再组队"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -879,7 +1121,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["主办单位", "提交方式与渠道", "展示环节时间地点", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "提交方式与渠道",
+        "展示环节时间地点",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "two-stage",
@@ -903,7 +1150,12 @@
         "publisherNote": "题目未标注招募方，未作推断"
       },
       "category": "volunteer",
-      "tags": ["摄影", "志愿服务", "长期招募", "设备非硬性"],
+      "tags": [
+        "摄影",
+        "志愿服务",
+        "长期招募",
+        "设备非硬性"
+      ],
       "summary": "长期招募校内大型活动摄影志愿者，有设备者优先但非硬性要求。",
       "detail": "校园摄影志愿者长期招募，参与校内大型活动摄影。具体报名截止时间未注明，有摄影设备者优先但不作硬性要求。",
       "registration": {
@@ -935,10 +1187,16 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["有摄影设备者优先，不作硬性要求"]
+        "otherConditions": [
+          "有摄影设备者优先，不作硬性要求"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -946,7 +1204,12 @@
         "text": "未标注名额",
         "full": false
       },
-      "missingFields": ["招募方", "报名方式", "报名截止时间", "费用信息"],
+      "missingFields": [
+        "招募方",
+        "报名方式",
+        "报名截止时间",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -963,7 +1226,12 @@
         "publisherNote": "题目未标注整理方，未作推断"
       },
       "category": "resource",
-      "tags": ["Python", "学习资料", "网盘", "有时效"],
+      "tags": [
+        "Python",
+        "学习资料",
+        "网盘",
+        "有时效"
+      ],
       "summary": "Python 学习资料合集，资料长期开放，但当前网盘提取信息 9 月 22 日失效。",
       "detail": "Python 程序设计学习资料合集，包含课程、练习和项目案例。资料长期开放，但当前网盘提取信息有效至 9 月 22 日，后续将统一更新。",
       "registration": {
@@ -976,7 +1244,9 @@
         "prerequisites": null,
         "fee": null,
         "feeNote": "费用信息未提供",
-        "evidenceRef": "当前网盘提取信息有效至9月22日，后续将统一更新"
+        "evidenceRef": "当前网盘提取信息有效至9月22日，后续将统一更新",
+        "evidenceRefAt": "2026-09-22T23:59:00+08:00",
+        "evidenceRefNote": "当前网盘提取信息有效至 9 月 22 日，之后需等待统一更新"
       },
       "schedule": {
         "firstSessionAt": null,
@@ -990,10 +1260,14 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1001,7 +1275,11 @@
         "text": "不适用",
         "full": false
       },
-      "missingFields": ["整理方", "网盘链接与提取码", "费用信息"],
+      "missingFields": [
+        "整理方",
+        "网盘链接与提取码",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "expiring-link",
@@ -1025,7 +1303,13 @@
         "publisherNote": "题目未标注组织方，未作推断"
       },
       "category": "study-group",
-      "tags": ["网络安全", "CTF", "Web安全", "不限基础", "每两周"],
+      "tags": [
+        "网络安全",
+        "CTF",
+        "Web安全",
+        "不限基础",
+        "每两周"
+      ],
       "summary": "网络安全兴趣交流小组，首次 9 月 19 日 19:30，之后每两周一次。",
       "detail": "网络安全兴趣交流小组，首次交流时间为 9 月 19 日 19:30，之后每两周开展一次，面向对 CTF、Web 安全等方向感兴趣的学生，不限基础。",
       "registration": {
@@ -1053,14 +1337,21 @@
         },
         "location": null,
         "locationNote": "活动地点未提供",
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 2.0,
+        "allDay": false,
+        "durationNote": "原文未给出时长，按常规交流活动 2 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["不限基础"]
+        "otherConditions": [
+          "不限基础"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1068,7 +1359,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["组织方", "活动地点", "是否需要报名", "费用信息"],
+      "missingFields": [
+        "组织方",
+        "活动地点",
+        "是否需要报名",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -1085,7 +1381,11 @@
         "publisherNote": "题目未标注主办单位，未作推断"
       },
       "category": "lecture",
-      "tags": ["路演", "观摩", "候补入场"],
+      "tags": [
+        "路演",
+        "观摩",
+        "候补入场"
+      ],
       "summary": "学生创新项目路演观摩，原报名已截止，现场有余位可候补入场。",
       "detail": "学生创新项目路演观摩，活动时间 9 月 20 日 14:30。原报名截止时间为 9 月 18 日 22:00；活动方说明如现场仍有余位，可接受候补入场。",
       "registration": {
@@ -1109,14 +1409,19 @@
         "recurrence": null,
         "location": null,
         "locationNote": "活动地点未提供",
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 2.0,
+        "allDay": false,
+        "durationNote": "原文未给出结束时间，按常规 2 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1125,7 +1430,12 @@
         "full": false,
         "caveat": "候补入场取决于现场余位，无保证"
       },
-      "missingFields": ["主办单位", "活动地点", "原报名渠道", "费用信息"],
+      "missingFields": [
+        "主办单位",
+        "活动地点",
+        "原报名渠道",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -1142,7 +1452,12 @@
         "publisherNote": null
       },
       "category": "lecture",
-      "tags": ["AI产品设计", "计算机学院", "无需报名", "座位有限"],
+      "tags": [
+        "AI产品设计",
+        "计算机学院",
+        "无需报名",
+        "座位有限"
+      ],
       "summary": "计算机学院主办的 AI 产品设计分享会，无需报名但座位有限。",
       "detail": "计算机学院发布的 AI 产品设计分享会，9 月 20 日 19:00 在明德楼 B203 举行，面向全校学生，无需报名，座位有限。",
       "registration": {
@@ -1165,14 +1480,19 @@
         "recurrence": null,
         "location": "明德楼B203",
         "locationNote": null,
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 2.0,
+        "allDay": false,
+        "durationNote": "原文未给出结束时间，按常规分享会 2 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1181,7 +1501,11 @@
         "full": false,
         "caveat": "无需报名但座位有限，建议提前到场"
       },
-      "missingFields": ["结束时间", "座位数量", "费用信息"],
+      "missingFields": [
+        "结束时间",
+        "座位数量",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     },
@@ -1198,7 +1522,12 @@
         "publisherNote": "题目注明为学生个人发布，未提供具体身份"
       },
       "category": "student-initiated",
-      "tags": ["约球", "羽毛球", "AA制", "学生自发"],
+      "tags": [
+        "约球",
+        "羽毛球",
+        "AA制",
+        "学生自发"
+      ],
       "summary": "学生发起的周末羽毛球约球，计划 6—8 人，费用 AA，场地待确认。",
       "detail": "学生个人发布的周末羽毛球约球信息，时间 9 月 20 日 16:00，计划 6—8 人，费用 AA，场地待最终确认。",
       "registration": {
@@ -1222,14 +1551,19 @@
         "recurrence": null,
         "location": null,
         "locationNote": "场地待最终确认",
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 2.0,
+        "allDay": false,
+        "durationNote": "原文未给出结束时间，按约球常规 2 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": 8,
@@ -1238,7 +1572,12 @@
         "text": "计划6—8人",
         "full": false
       },
-      "missingFields": ["场地", "联系方式与报名方式", "AA 具体金额", "报名截止时间"],
+      "missingFields": [
+        "场地",
+        "联系方式与报名方式",
+        "AA 具体金额",
+        "报名截止时间"
+      ],
       "riskFlags": [
         {
           "code": "location-pending",
@@ -1262,7 +1601,12 @@
         "publisherNote": "题目注明为学生个人发布，未提供具体身份"
       },
       "category": "student-initiated",
-      "tags": ["搭子", "AI工具", "零基础", "学生自发"],
+      "tags": [
+        "搭子",
+        "AI工具",
+        "零基础",
+        "学生自发"
+      ],
       "summary": "学生发起的 AI 工具交流搭子招募，计划 9 月 21 日晚，地点待定。",
       "detail": "学生个人发布的 AI 工具交流搭子招募，拟于 9 月 21 日晚开展，欢迎零基础，报名后拉群，具体地点未确定。",
       "registration": {
@@ -1286,14 +1630,21 @@
         "recurrence": null,
         "location": null,
         "locationNote": "具体地点未确定",
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 2.0,
+        "allDay": false,
+        "durationNote": "原文只写「9月21日晚」，按 2 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": ["欢迎零基础"]
+        "otherConditions": [
+          "欢迎零基础"
+        ],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1301,7 +1652,12 @@
         "text": "未标注人数上限",
         "full": false
       },
-      "missingFields": ["具体时间", "地点", "报名入口与联系方式", "费用信息"],
+      "missingFields": [
+        "具体时间",
+        "地点",
+        "报名入口与联系方式",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "location-pending",
@@ -1325,7 +1681,11 @@
         "publisherNote": "题目注明为学生个人发布，未提供具体身份"
       },
       "category": "student-initiated",
-      "tags": ["兼职", "需加微信", "信息不完整"],
+      "tags": [
+        "兼职",
+        "需加微信",
+        "信息不完整"
+      ],
       "summary": "自称「零门槛、日结」的兼职分享，要求添加私人微信获取详情，无主办方与地点信息。",
       "detail": "学生个人发布的信息，标题为「校园兼职福利分享」，称「零门槛、日结」，要求添加私人微信获取详情。未提供主办方、地点和完整内容。",
       "registration": {
@@ -1353,10 +1713,14 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1364,7 +1728,13 @@
         "text": "未标注名额",
         "full": false
       },
-      "missingFields": ["主办方", "活动时间", "地点", "完整内容", "费用信息"],
+      "missingFields": [
+        "主办方",
+        "活动时间",
+        "地点",
+        "完整内容",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "suspicious",
@@ -1388,7 +1758,11 @@
         "publisherNote": "题目注明为学生个人发布，未提供具体身份"
       },
       "category": "student-initiated",
-      "tags": ["标题与内容不符", "含购买链接", "推广"],
+      "tags": [
+        "标题与内容不符",
+        "含购买链接",
+        "推广"
+      ],
       "summary": "标题为技术交流，正文实为商家优惠与购买链接，无活动时间与地点。",
       "detail": "学生个人发布的信息，标题为「数码新品体验交流」（技术交流），正文主要介绍某商家优惠及购买链接。活动时间、地点未注明。",
       "registration": {
@@ -1417,10 +1791,14 @@
         "allDay": false
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1428,7 +1806,12 @@
         "text": "未标注名额",
         "full": false
       },
-      "missingFields": ["活动时间", "地点", "报名方式", "费用信息"],
+      "missingFields": [
+        "活动时间",
+        "地点",
+        "报名方式",
+        "费用信息"
+      ],
       "riskFlags": [
         {
           "code": "title-mismatch",
@@ -1452,7 +1835,12 @@
         "publisherNote": null
       },
       "category": "cultural",
-      "tags": ["语言角", "外国语学院", "自由交流", "无需报名"],
+      "tags": [
+        "语言角",
+        "外国语学院",
+        "自由交流",
+        "无需报名"
+      ],
       "summary": "外国语学院主办的校园语言角，自由交流，无需提前报名。",
       "detail": "外国语学院发布的校园语言角，9 月 21 日 15:00 举行，面向全校学生，自由交流，场地容量有限，无需提前报名。",
       "registration": {
@@ -1475,14 +1863,19 @@
         "recurrence": null,
         "location": null,
         "locationNote": "具体场地未提供",
-        "durationHours": null,
-        "allDay": false
+        "durationHours": 1.5,
+        "allDay": false,
+        "durationNote": "原文未给出结束时间，按常规 1.5 小时估算"
       },
       "eligibility": {
-        "gradeRange": [1, 4],
+        "gradeRange": [
+          1,
+          4
+        ],
         "openToAll": true,
         "majors": null,
-        "otherConditions": []
+        "otherConditions": [],
+        "weeklyHours": null
       },
       "capacity": {
         "limit": null,
@@ -1491,7 +1884,11 @@
         "full": false,
         "caveat": "无需报名但容量有限，建议提前到场"
       },
-      "missingFields": ["具体场地", "结束时间", "费用信息"],
+      "missingFields": [
+        "具体场地",
+        "结束时间",
+        "费用信息"
+      ],
       "riskFlags": [],
       "updates": []
     }

@@ -59,14 +59,31 @@
     openPublish: document.getElementById("open-publish"),
     openMine: document.getElementById("open-mine"),
     clearLocal: document.getElementById("clear-local"),
-    repoLink: document.getElementById("repo-link")
+    repoLink: document.getElementById("repo-link"),
+    /* 创新功能：时间机器与精力预算 */
+    baselineDate: document.getElementById("baseline-date"),
+    resetDate: document.getElementById("reset-date"),
+    baselineHint: document.getElementById("baseline-hint"),
+    weeklyBudget: document.getElementById("weekly-budget"),
+    budgetHint: document.getElementById("budget-hint"),
+    machineStrip: document.getElementById("machine-strip"),
+    machineNote: document.getElementById("machine-note"),
+    machineDesc: document.getElementById("machine-desc"),
+    budgetPanel: document.getElementById("budget-panel"),
+    budgetBar: document.getElementById("budget-bar"),
+    budgetBody: document.getElementById("budget-body"),
+    budgetNote: document.getElementById("budget-note")
   };
 
-  /* 筛选状态：从本地恢复，保证刷新后一致 */
+  /* 筛选状态：从本地恢复，保证刷新后一致。
+     baseline 是"当前认为的今天"，可由时间机器改变；它贯穿全部状态计算。 */
   var filters = Object.assign({
     grade: 0,
-    fromNow: true
+    fromNow: true,
+    baseline: TODAY,
+    weeklyBudget: 0
   }, store.filters());
+  if (!filters.baseline) filters.baseline = TODAY;
 
   var openDrawer = null;
   var lastFocused = null;
@@ -140,10 +157,15 @@
 
   /* ============================================================ 派生数据 */
 
+  /** 当前生效的"今天"：时间机器可改，默认为题目给定的基准日。 */
+  function baseline() {
+    return filters.baseline || TODAY;
+  }
+
   function currentSelection() {
     var activities = allActivities();
     var opts = {
-      today: TODAY,
+      today: baseline(),
       keyword: filters.keyword,
       sources: filters.sources,
       categories: filters.categories,
@@ -155,6 +177,31 @@
     };
     var items = L.selectActivities(activities, opts);
     return { activities: activities, items: items };
+  }
+
+  /**
+   * 撞车映射：一次算好全部活动的冲突关系，供卡片标记使用。
+   * 放在这里而不是每张卡片各算一次，避免 O(n²) 重复计算。
+   */
+  function buildConflictMap(activities) {
+    var map = {};
+    activities.forEach(function (act) {
+      var conflicts = L.findConflicts(act, activities, baseline());
+      if (conflicts.length) map[act.id] = conflicts;
+    });
+    return map;
+  }
+
+  /** 标记为「我要参加」且有时间要求的条目，供精力预算使用。 */
+  function registeredItems(activities) {
+    var reg = {};
+    store.registeredIds().forEach(function (id) { reg[id] = true; });
+    return L.decorateAll(activities, baseline(), { grade: filters.grade || null })
+      .map(function (it) {
+        it.registered = !!reg[it.activity.id];
+        return it;
+      })
+      .filter(function (it) { return it.registered; });
   }
 
   function statusCodes(status) {
@@ -169,7 +216,7 @@
 
   function statusCounts(activities) {
     var counts = { all: activities.length, urgent: 0, open: 0, rolling: 0, closed: 0 };
-    L.decorateAll(activities, TODAY, {}).forEach(function (it) {
+    L.decorateAll(activities, baseline(), {}).forEach(function (it) {
       var code = it.status.code;
       if (code === "today" || code === "last-call") counts.urgent++;
       else if (code === "open" || code === "unknown") counts.open++;
@@ -212,12 +259,12 @@
     };
 
     /* 头部 */
-    dom.todayValue.textContent = TODAY;
-    dom.todayHint.textContent = "以考核当日为判断基准";
+    dom.todayValue.textContent = baseline();
+    dom.todayHint.textContent = baseline() === TODAY ? "以考核当日为判断基准" : "已由时间机器改写";
 
     /* 指标 */
-    var summary = L.summarize(L.decorateAll(activities, TODAY, {}));
-    var timeline = L.buildTimeline(activities, { today: TODAY });
+    var summary = L.summarize(L.decorateAll(activities, baseline(), {}));
+    var timeline = L.buildTimeline(activities, { today: baseline() });
     UI.renderKpis(dom.kpis, summary, timeline);
 
     /* 筛选控件 */
@@ -270,12 +317,35 @@
         "，已按「" + L.gradeLabel(filters.grade) + "」过滤不适用的机会"));
     }
 
-    /* 列表 */
-    UI.renderFeed(dom.feed, L.bucketize(items, { hideEmpty: true }), TODAY, store, handlers);
+    /* 列表：撞车映射预先算好，避免每张卡片各算一次 */
+    handlers.conflictMap = buildConflictMap(activities);
+    UI.renderFeed(dom.feed, L.bucketize(items, { hideEmpty: true }), baseline(), store, handlers);
 
     /* 时间线 */
-    UI.renderTimeline(dom.timeline, timeline, store, handlers, TODAY);
+    UI.renderTimeline(dom.timeline, timeline, store, handlers, baseline());
     dom.timelineNote.textContent = timeline.all.length + " 个节点";
+
+    /* 时间机器：未来几天的状态变化预演 */
+    UI.renderMachine(dom.machineStrip, dom.machineNote, dom.machineDesc,
+      L.projectTransitions(activities, baseline(), 7), baseline(), handlers);
+
+    /* 精力预算：把「我要参加」的每周投入加起来，看是否排得下 */
+    var budget = L.computeBudget(registeredItems(activities), filters.weeklyBudget);
+    UI.renderBudget(dom.budgetPanel, dom.budgetBar, dom.budgetBody, dom.budgetNote,
+      budget, handlers);
+    renderBudgetHint(budget);
+
+    /* 时间机器的状态显示 */
+    dom.baselineDate.value = baseline();
+    if (baseline() === TODAY) {
+      dom.baselineHint.textContent = "当前为题目给定的基准日";
+      dom.baselineHint.dataset.tone = "";
+    } else {
+      var diff = L.daysBetween(TODAY, baseline());
+      dom.baselineHint.textContent = "已改为 " + baseline() +
+        "（相对题目基准日 " + (diff > 0 ? "+" : "") + diff + " 天），全部判定已重算";
+      dom.baselineHint.dataset.tone = "warning";
+    }
 
     dom.mineCount.textContent = store.summary().favorites + store.summary().registered;
     dom.mineCount.classList.toggle("btn-dot", store.summary().posts > 0);
@@ -306,6 +376,27 @@
     else list.push(code);
   }
 
+  /** 精力预算的提示文案 */
+  function renderBudgetHint(budget) {
+    if (budget.budget <= 0) {
+      dom.budgetHint.textContent = "填写后可判断「我要参加」的机会是否排得下";
+      dom.budgetHint.dataset.tone = "";
+      return;
+    }
+    if (budget.committedCount === 0) {
+      dom.budgetHint.textContent = "填好了。现在去标记几项「我要参加」，我会帮你核算";
+      dom.budgetHint.dataset.tone = "";
+      return;
+    }
+    if (budget.over) {
+      dom.budgetHint.textContent = "超出预算 " + Math.abs(budget.remaining) + " 小时/周";
+      dom.budgetHint.dataset.tone = "warning";
+    } else {
+      dom.budgetHint.textContent = "还剩 " + budget.remaining + " 小时/周";
+      dom.budgetHint.dataset.tone = "success";
+    }
+  }
+
   function persistFilters() {
     store.setFilters({
       keyword: filters.keyword,
@@ -315,7 +406,9 @@
       freshman: filters.freshman,
       hideSuspicious: filters.hideSuspicious,
       grade: filters.grade,
-      fromNow: filters.fromNow
+      fromNow: filters.fromNow,
+      baseline: filters.baseline,
+      weeklyBudget: filters.weeklyBudget
     });
   }
 
@@ -365,9 +458,10 @@
   }
 
   function openDetail(id) {
-    var act = allActivities().filter(function (a) { return a.id === id; })[0];
+    var activities = allActivities();
+    var act = activities.filter(function (a) { return a.id === id; })[0];
     if (!act) return;
-    var item = L.toItem(act, TODAY, { grade: filters.grade || null });
+    var item = L.toItem(act, baseline(), { grade: filters.grade || null });
     var handlers = {
       toggleFavorite: function (aid) {
         var on = store.toggleFavorite(aid);
@@ -382,9 +476,17 @@
           on ? "i-check" : "i-close");
         render();
         refreshMine();
+      },
+      openDetail: openDetail,
+      /* 撞车提示：详情里给出与这条冲突的其他机会 */
+      conflicts: L.findConflicts(act, activities, baseline()),
+      /* 日历导出成功后的反馈 */
+      onExport: function (exported) {
+        UI.toast(dom.toasts, "已导出日历文件，双击即可导入手机日历", "accent", "i-calendar");
+        void exported;
       }
     };
-    UI.renderDetail(dom.drawer, item, TODAY, store, handlers);
+    UI.renderDetail(dom.drawer, item, baseline(), store, handlers);
     showDrawer(dom.drawer);
   }
 
@@ -522,7 +624,7 @@
     var favorites = store.favoriteIds().map(function (id) { return byId[id]; }).filter(Boolean);
     var registered = store.registeredIds().map(function (id) { return byId[id]; }).filter(Boolean);
 
-    UI.renderMine(dom.mineBody, favorites, registered, posts, TODAY, store, {
+    UI.renderMine(dom.mineBody, favorites, registered, posts, baseline(), store, {
       openDetail: function (id) {
         var post = store.getPost(id);
         if (post) { openPublish(id); return; }
@@ -572,11 +674,45 @@
 
   dom.resetFilters.addEventListener("click", function () {
     filters = { keyword: "", status: "all", sources: [], categories: [],
-      freshman: false, hideSuspicious: false, grade: 0, fromNow: true };
+      freshman: false, hideSuspicious: false, grade: 0, fromNow: true,
+      baseline: TODAY, weeklyBudget: filters.weeklyBudget };
     dom.q.value = "";
     store.resetFilters();
+    persistFilters();
     render();
     UI.toast(dom.toasts, "已清空筛选条件", "accent", "i-close");
+  });
+
+  /* 时间机器：改变"今天"，全部状态判定随之重算 */
+  dom.baselineDate.addEventListener("change", function () {
+    var value = dom.baselineDate.value;
+    if (!value) { filters.baseline = TODAY; }
+    else { filters.baseline = value; }
+    persistFilters();
+    render();
+    UI.toast(dom.toasts,
+      filters.baseline === TODAY ? "已回到题目基准日" : "已把基准日改为 " + filters.baseline,
+      "accent", "i-history");
+  });
+
+  dom.resetDate.addEventListener("click", function () {
+    filters.baseline = TODAY;
+    persistFilters();
+    render();
+    UI.toast(dom.toasts, "已回到题目基准日 " + TODAY, "accent", "i-history");
+  });
+
+  /* 精力预算：每周可投入小时数 */
+  var budgetTimer = null;
+  dom.weeklyBudget.addEventListener("input", function () {
+    clearTimeout(budgetTimer);
+    budgetTimer = setTimeout(function () {
+      var raw = dom.weeklyBudget.value;
+      var hours = raw === "" ? 0 : Math.max(0, Math.min(60, Number(raw) || 0));
+      filters.weeklyBudget = hours;
+      persistFilters();
+      render();
+    }, 200);
   });
 
   dom.openPublish.addEventListener("click", function () { openPublish(null); });
@@ -612,6 +748,9 @@
   function boot() {
     /* 恢复筛选控件显示值 */
     dom.q.value = filters.keyword || "";
+    dom.baselineDate.value = baseline();
+    /* 预算输入框也要回填，否则刷新后看不到自己设置过的小时数 */
+    dom.weeklyBudget.value = filters.weeklyBudget > 0 ? String(filters.weeklyBudget) : "";
     render();
     refreshMine();
 

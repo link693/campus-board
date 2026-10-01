@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7,8 +7,8 @@
 <meta name="description" content="面向在校学生的校园活动与机会平台：合并重复通知、实时计算报名状态、标注信息缺失与可疑内容，支持学生自主发布，重点照顾新生使用体验。">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2338e0d0'/%3E%3Cpath d='M10 20V11h5.4c2.3 0 3.7 1.2 3.7 3.2 0 1.5-.8 2.5-2.1 2.9l2.4 2.9h-2.6l-2.1-2.7H12v2.7z' fill='%23061319'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/tokens.css?v=af92ebb950">
+<link rel="stylesheet" href="css/app.css?v=af92ebb950">
 </head>
 <body>
 
@@ -142,9 +142,32 @@
         </div>
       </div>
 
-      <div class="filter-row" role="group" aria-label="我的年级">
+      <div class="filter-row">
         <span class="filter-label">我的年级</span>
         <div class="segmented" id="grade-filter"></div>
+      </div>
+
+      <div class="filter-row" role="group" aria-label="精力预算">
+        <span class="filter-label">每周可投入</span>
+        <div class="budget-input">
+          <label class="sr-only" for="weekly-budget">每周可投入小时数</label>
+          <input class="input input-num" id="weekly-budget" type="number" min="0" max="60" step="1" placeholder="—" inputmode="numeric">
+          <span class="budget-unit">小时</span>
+        </div>
+        <span class="filter-hint" id="budget-hint">填写后可判断「我要参加」的机会是否排得下</span>
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-label">时间机器</span>
+        <div class="budget-input">
+          <label class="sr-only" for="baseline-date">把「今天」改成其他日期</label>
+          <input class="input input-date" id="baseline-date" type="date" min="2026-09-01" max="2026-12-31">
+        </div>
+        <button class="chip" id="reset-date" type="button" title="回到题目给定的基准日">
+          <svg aria-hidden="true"><use href="#i-history"></use></svg>
+          回到底题基准日
+        </button>
+        <span class="filter-hint" id="baseline-hint"></span>
       </div>
 
       <div class="filter-row">
@@ -169,6 +192,39 @@
           <svg aria-hidden="true"><use href="#i-close"></use></svg>
           清空筛选
         </button>
+      </div>
+    </section>
+
+    <!-- 时间机器：状态变化预演 -->
+    <section class="panel machine" id="machine-panel" aria-labelledby="machine-title">
+      <div class="panel-head">
+        <h2 class="panel-title" id="machine-title">
+          <svg aria-hidden="true"><use href="#i-history"></use></svg>
+          接下来会消失的机会
+        </h2>
+        <span class="panel-note" id="machine-note"></span>
+      </div>
+      <div class="panel-pad">
+        <p class="prose" id="machine-desc">
+          所有状态都是按当前基准日算出来的。这里把未来几天的变化提前告诉你——
+          哪条会截止、哪天会开始、哪份资料会失效。
+        </p>
+        <div class="machine-strip" id="machine-strip"></div>
+      </div>
+    </section>
+
+    <!-- 精力预算 -->
+    <section class="panel" id="budget-panel" aria-labelledby="budget-title" hidden>
+      <div class="panel-head">
+        <h2 class="panel-title" id="budget-title">
+          <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+          精力预算
+        </h2>
+        <span class="panel-note" id="budget-note"></span>
+      </div>
+      <div class="panel-pad">
+        <div class="budget-bar" id="budget-bar"></div>
+        <div id="budget-body"></div>
       </div>
     </section>
 
@@ -387,10 +443,10 @@
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<script src="js/data.js"></script>
-<script src="js/logic.js"></script>
-<script src="js/store.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/main.js"></script>
+<script src="js/data.js?v=af92ebb950"></script>
+<script src="js/logic.js?v=af92ebb950"></script>
+<script src="js/store.js?v=af92ebb950"></script>
+<script src="js/ui.js?v=af92ebb950"></script>
+<script src="js/main.js?v=af92ebb950"></script>
 </body>
 </html>

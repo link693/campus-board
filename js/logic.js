@@ -622,6 +622,332 @@
     };
   }
 
+  /* -------------------------------------------------------- 时间窗口工具 */
+
+  /** 单场活动的起止时间；无结束时间时按 durationHours 或 2 小时估算。 */
+  function sessionWindow(act) {
+    var start = toDate(act.schedule.firstSessionAt);
+    if (!start) return null;
+    var end = toDate(act.schedule.endAt);
+    if (!end) {
+      var hours = act.schedule.durationHours;
+      if (hours === null || hours === undefined) hours = 2;
+      end = new Date(start.getTime() + hours * 3600000);
+    }
+    if (end <= start) return null;
+    return { start: start, end: end };
+  }
+
+  function overlaps(a, b) {
+    return a.start < b.end && b.start < a.end;
+  }
+
+  function formatRange(start, end) {
+    function hm(d) {
+      var h = d.getHours(), m = d.getMinutes();
+      return (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+    }
+    return hm(start) + "—" + hm(end);
+  }
+
+  /**
+   * 撞车检测：找出与目标活动在时间上重叠的其他活动。
+   *
+   * 这是原始材料里真实存在、但列表形式完全看不出来的问题：
+   * 9 月 19 日 19:00 有 AI 公开课、19:30 有网络安全小组，19:00 前后还有前端交流会。
+   *
+   * @param {object} target 目标活动
+   * @param {object[]} activities 全部活动
+   * @param {string} today 基准日
+   * @param {{withinDays?:number, withinMinutes?:number}} options
+   *        withinDays：只把几天内的活动视为可能撞车；withinMinutes：同日内开始时间相差多少分钟算需要提醒
+   */
+  function findConflicts(target, activities, today, options) {
+    var opts = options || {};
+    var withinDays = opts.withinDays === undefined ? 3 : opts.withinDays;
+    var withinMinutes = opts.withinMinutes === undefined ? 90 : opts.withinMinutes;
+    var win = sessionWindow(target);
+    if (!win) return [];
+
+    var targetDate = isoDatePart(target.schedule.firstSessionAt);
+    var todayStr = isoDatePart(today) || today;
+    var targetStatus = computeStatus(target, today);
+    if (targetStatus.code === STATUS.ENDED) return [];
+
+    var results = [];
+    activities.forEach(function (other) {
+      if (other.id === target.id) return;
+      var otherWin = sessionWindow(other);
+      if (!otherWin) return;
+      var otherDate = isoDatePart(other.schedule.firstSessionAt);
+      if (!otherDate) return;
+
+      var gap = Math.abs(daysBetween(targetDate, otherDate));
+      if (gap === null || gap > withinDays) return;
+
+      var otherStatus = computeStatus(other, today);
+      if (otherStatus.code === STATUS.ENDED) return;
+
+      // 只提示"还能处理"的撞车：两个活动都还没开始
+      if (target.schedule.firstSessionAt < todayStr && other.schedule.firstSessionAt < todayStr) return;
+
+      var startDelta = Math.abs(win.start - otherWin.start) / 60000;
+
+      if (overlaps(win, otherWin)) {
+        results.push({
+          activity: other,
+          status: otherStatus,
+          sameDay: gap === 0,
+          range: formatRange(otherWin.start, otherWin.end),
+          minutesApart: Math.round(startDelta),
+          severity: "conflict",
+          reason: "时间完全重叠"
+        });
+      } else if (gap === 0 && startDelta <= withinMinutes) {
+        results.push({
+          activity: other,
+          status: otherStatus,
+          sameDay: true,
+          range: formatRange(otherWin.start, otherWin.end),
+          minutesApart: Math.round(startDelta),
+          severity: "near",
+          reason: "开始时间仅相差 " + Math.round(startDelta) + " 分钟，需要赶场"
+        });
+      }
+    });
+
+    results.sort(function (a, b) {
+      if (a.severity !== b.severity) return a.severity === "conflict" ? -1 : 1;
+      if (a.sameDay !== b.sameDay) return a.sameDay ? -1 : 1;
+      return a.minutesApart - b.minutesApart;
+    });
+    return results;
+  }
+
+  /**
+   * 精力预算：材料里 03/08/13 分别要求每周投入 4/5/6 小时，
+   * 但没有任何产品会把这些数字加起来。给定学生每周可投入的小时数，
+   * 判断当前想要参加的组合是否超支，并给出可行的搭配。
+   *
+   * @param {object[]} items selectActivities 的返回结果
+   * @param {number} weeklyBudget 每周可投入小时数
+   */
+  function computeBudget(items, weeklyBudget) {
+    var withHours = items.filter(function (it) {
+      return it.activity.eligibility && it.activity.eligibility.weeklyHours;
+    });
+
+    var committed = withHours.filter(function (it) {
+      return it.registered || it.selected;
+    });
+
+    function sum(list) {
+      return list.reduce(function (n, it) {
+        return n + it.activity.eligibility.weeklyHours;
+      }, 0);
+    }
+
+    var budget = Number(weeklyBudget) || 0;
+    var used = sum(committed);
+    var allHours = sum(withHours);
+
+    // 贪心：按小时数从小到大挑选，尽量多装几个
+    var sorted = withHours.slice().sort(function (a, b) {
+      return a.activity.eligibility.weeklyHours - b.activity.eligibility.weeklyHours;
+    });
+    var picked = [];
+    var acc = 0;
+    sorted.forEach(function (it) {
+      var h = it.activity.eligibility.weeklyHours;
+      if (acc + h <= budget) {
+        picked.push(it);
+        acc += h;
+      }
+    });
+
+    return {
+      budget: budget,
+      committedHours: used,
+      allHours: allHours,
+      remaining: budget - used,
+      over: budget > 0 && used > budget,
+      committedCount: committed.length,
+      availableCount: withHours.length,
+      suggestion: picked,
+      suggestionHours: acc,
+      totalIfAll: allHours
+    };
+  }
+
+  /**
+   * 时效信息是否临近失效或已失效。
+   * 对应材料里「当前网盘提取信息有效至 9 月 22 日」这类会被忽略的细节。
+   */
+  function computeExpiry(act, today) {
+    var at = act.registration && act.registration.evidenceRefAt;
+    if (!at) return null;
+    var left = daysBetween(today, at);
+    if (left === null) return null;
+    return {
+      at: at,
+      daysLeft: left,
+      note: act.registration.evidenceRefNote || "",
+      expired: left < 0,
+      urgent: left >= 0 && left <= 3
+    };
+  }
+
+  /* ------------------------------------------------------- 时间线偏移预演 */
+
+  /**
+   * 时间机器：从基准日向后看，找出接下来一段时间内会发生状态变化的节点。
+   *
+   * 这直接回答学生最需要、但现有产品都不回答的问题：
+   * 「如果我一直不处理，接下来几天哪些机会会消失、哪些会开始？」
+   *
+   * @param {object[]} activities
+   * @param {string} today 当前基准日
+   * @param {number} days 向后看的天数
+   */
+  function projectTransitions(activities, today, days) {
+    // 注意：不能写成 days || 7 —— 传入 0 时会被默认值覆盖（0 是 falsy）
+    var span = (days === undefined || days === null) ? 7 : Number(days);
+    if (!(span >= 0)) span = 7;
+    var base = toDate(today);
+    if (!base) return [];
+
+    var events = [];
+    activities.forEach(function (act) {
+      var current = computeStatus(act, today);
+      var watch = [
+        { at: act.registration.deadlineAt, kind: "deadline", label: "报名截止" },
+        { at: act.schedule.firstSessionAt, kind: "session", label: "活动开始" },
+        { at: act.registration.evidenceRefAt, kind: "expiry", label: "信息失效" }
+      ];
+      watch.forEach(function (w) {
+        if (!w.at) return;
+        var target = toDate(w.at);
+        if (!target) return;
+        var offset = daysBetween(today, target);
+        // 只预告"今天之后"的节点：span 表示向后看的天数，
+        // 当天节点已在时间线里呈现，混入预告会让列表失去前瞻意义。
+        if (offset === null || offset < 1 || offset > span) return;
+
+        var futureDate = new Date(base.getFullYear(), base.getMonth(), base.getDate() + offset);
+        var iso = futureDate.getFullYear() + "-" +
+          pad2(futureDate.getMonth() + 1) + "-" + pad2(futureDate.getDate());
+        var future = computeStatus(act, iso);
+
+        events.push({
+          activity: act,
+          kind: w.kind,
+          kindLabel: w.label,
+          at: w.at,
+          offsetDays: offset,
+          fromDate: iso,
+          fromStatus: current,
+          toStatus: future,
+          changes: future.code !== current.code
+        });
+      });
+    });
+
+    events.sort(function (a, b) {
+      if (a.offsetDays !== b.offsetDays) return a.offsetDays - b.offsetDays;
+      return toDate(a.at) - toDate(b.at);
+    });
+    return events;
+  }
+
+  function pad2(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
+
+  /* ------------------------------------------------------------ 日历导出 */
+
+  /** 把时刻格式化为 iCalendar 的本地时间格式（20260919T190000）。 */
+  function icsStamp(value) {
+    var d = toDate(value);
+    if (!d) return null;
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "T" +
+      pad2(d.getHours()) + pad2(d.getMinutes()) + "00";
+  }
+
+  function icsEscape(text) {
+    return String(text || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r?\n/g, "\\n");
+  }
+
+  function foldIcsLine(line) {
+    // iCalendar 规定单行不超过 75 字节，中文按 UTF-8 多字节，这里按字符保守折叠
+    if (line.length <= 60) return line;
+    var out = [];
+    for (var i = 0; i < line.length; i += 60) out.push(line.slice(i, i + 60));
+    return out.join("\r\n ");
+  }
+
+  /**
+   * 导出 iCalendar（.ics）。
+   * 选择这个方案而不是浏览器通知：零权限、零后端、双击即可导入手机日历，
+   * 对"怕忘记截止时间"这个真实问题最直接有效。
+   *
+   * @param {object[]} activities 要导出的活动
+   * @param {string} today 基准日
+   */
+  function buildCalendar(activities, today) {
+    var lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Campus Board//校园活动板//CN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:校园活动板"
+    ];
+
+    activities.forEach(function (act) {
+      var status = computeStatus(act, today);
+
+      /* 报名截止：作为全天提醒放在截止日前一天，避免当天才看到 */
+      var deadline = toDate(act.registration.deadlineAt);
+      if (deadline && !status.terminal && daysBetween(today, act.registration.deadlineAt) >= 0) {
+        var remindDate = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate() - 1);
+        lines.push("BEGIN:VEVENT");
+        lines.push("UID:" + act.id + "-deadline@campus-board");
+        lines.push("DTSTAMP:" + icsStamp(today));
+        lines.push("DTSTART;VALUE=DATE:" + remindDate.getFullYear() + pad2(remindDate.getMonth() + 1) +
+          pad2(remindDate.getDate()));
+        lines.push(foldIcsLine("SUMMARY:" + icsEscape("报名截止提醒：" + act.title)));
+        lines.push(foldIcsLine("DESCRIPTION:" + icsEscape(
+          "报名截止时间：" + act.registration.deadlineText +
+          (act.registration.method ? "；报名方式：" + act.registration.method : "") +
+          "（由校园活动板导出）")));
+        lines.push("END:VEVENT");
+      }
+
+      /* 活动本身：有明确开始时间才写入 */
+      var win = sessionWindow(act);
+      if (win && status.code !== STATUS.ENDED) {
+        lines.push("BEGIN:VEVENT");
+        lines.push("UID:" + act.id + "-session@campus-board");
+        lines.push("DTSTAMP:" + icsStamp(today));
+        lines.push("DTSTART:" + icsStamp(act.schedule.firstSessionAt));
+        lines.push("DTEND:" + icsStamp(win.end.toISOString()));
+        lines.push(foldIcsLine("SUMMARY:" + icsEscape(act.title)));
+        lines.push(foldIcsLine("LOCATION:" + icsEscape(act.schedule.location || "地点未提供")));
+        lines.push(foldIcsLine("DESCRIPTION:" + icsEscape(
+          act.summary + (act.schedule.locationNote ? "（" + act.schedule.locationNote + "）" : "") +
+          "（由校园活动板导出）")));
+        lines.push("END:VEVENT");
+      }
+    });
+
+    lines.push("END:VCALENDAR");
+    return lines.join("\r\n") + "\r\n";
+  }
+
   /* -------------------------------------------------------------- 导出 */
 
   return {
@@ -655,6 +981,15 @@
     summarize: summarize,
     categoryOptions: categoryOptions,
     sourceOptions: sourceOptions,
-    matchKeyword: matchKeyword
+    matchKeyword: matchKeyword,
+
+    /* 创新功能 */
+    sessionWindow: sessionWindow,
+    findConflicts: findConflicts,
+    computeBudget: computeBudget,
+    computeExpiry: computeExpiry,
+    projectTransitions: projectTransitions,
+    buildCalendar: buildCalendar,
+    icsStamp: icsStamp
   };
 });

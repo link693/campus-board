@@ -68,14 +68,27 @@ test("html 中每个 id 都唯一", () => {
   assert(dup.length === 0, `重复 id：${dup.join(", ")}`);
 });
 
-test("引用的脚本与样式文件都存在", () => {
+test("引用的脚本与样式文件都存在（忽略缓存版本号查询串）", () => {
   const missing = [];
   const re = /(?:src|href)="((?:js|css|docs|data)\/[^"]+)"/g;
   let mm;
   while ((mm = re.exec(html))) {
-    if (!fs.existsSync(path.join(ROOT, mm[1]))) missing.push(mm[1]);
+    const raw = mm[1];
+    const file = raw.split("?")[0];       // 去掉 ?v=xxx 缓存版本号
+    if (!fs.existsSync(path.join(ROOT, file))) missing.push(raw);
   }
   assert(missing.length === 0, `文件不存在：${missing.join(", ")}`);
+});
+
+test("css 与 js 引用都带缓存版本号，避免改了看不到", () => {
+  const re = /(?:src|href)="((?:js|css)\/[^"]+)"/g;
+  let mm;
+  const bad = [];
+  while ((mm = re.exec(html))) {
+    if (!/\?v=/.test(mm[1])) bad.push(mm[1]);
+  }
+  assert(bad.length === 0,
+    `以下引用缺少 ?v= 版本号（浏览器可能复用旧文件）：\n      ${bad.join("\n      ")}`);
 });
 
 test("脚本加载顺序正确：data → logic → store → ui → main", () => {

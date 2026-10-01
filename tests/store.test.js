@@ -140,6 +140,27 @@ test("数据能被重新读回（模拟刷新页面）", () => {
   eq(second.filters().grade, 1);
 });
 
+test("时间机器与精力预算的设置也会被持久化", () => {
+  // 回归用例：这两个键曾经没有登记在 DEFAULTS.filters 里，
+  // 而合并逻辑只保留默认值中存在的键，导致设置被静默丢弃。
+  const s = fakeStorage();
+  const first = Store.createStore(s);
+  first.setFilters({ baseline: "2026-09-25", weeklyBudget: 10 });
+
+  const second = Store.createStore(s);
+  eq(second.filters().baseline, "2026-09-25", "基准日设置应恢复");
+  eq(second.filters().weeklyBudget, 10, "每周预算应恢复");
+});
+
+test("默认偏好包含全部界面设置项，避免新增设置被静默丢弃", () => {
+  const defaults = Store.createStore(fakeStorage()).filters();
+  ["keyword", "status", "sources", "categories", "freshman", "hideSuspicious",
+    "grade", "fromNow", "baseline", "weeklyBudget"].forEach((key) => {
+    assert(Object.prototype.hasOwnProperty.call(defaults, key),
+      `DEFAULTS.filters 缺少 ${key}，该设置将无法被保存`);
+  });
+});
+
 test("损坏的存储内容不会导致崩溃，而是回退到默认值", () => {
   const s = fakeStorage();
   s.setItem(Store.KEY, "{ 这不是合法 JSON");
