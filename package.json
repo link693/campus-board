@@ -10,8 +10,10 @@
     "test:logic": "node tests/logic.test.js",
     "test:store": "node tests/store.test.js",
     "test:wiring": "node tests/dom-wiring.test.js",
+    "test:parity": "node tests/status-parity.test.js",
     "build:data": "python tools/build_dataset.py",
-    "check:data": "python tools/build_dataset.py --check"
+    "check:data": "python tools/build_dataset.py --check",
+    "build:report": "python tools/build_report.py"
   },
   "engines": {
     "node": ">=18"

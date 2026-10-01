@@ -131,7 +131,10 @@ npx serve .
 ├─ data/activities.json       结构化后的 24 个条目
 ├─ tools/extract_docx.py      从题目 DOCX 提取原文
 ├─ tools/build_dataset.py     校验并生成 js/data.js
-├─ tests/*.test.js            68 项自动化测试
+├─ tools/build_report.py      生成数据治理审计报告
+├─ tools/push_to_github.py    建远端并推送（gh 未登录时的替代路径）
+├─ tests/*.test.js            74 项自动化测试
+├─ docs/DATA_AUDIT.md         数据治理审计报告（自动生成）
 └─ docs/DESIGN.md             设计系统说明
 ```
 
@@ -144,15 +147,21 @@ npm test                       # 一次跑完全部测试（需 Node 18+）
 或分别运行：
 
 ```powershell
-node tests/logic.test.js       # 46 项：事实判定、日期计算、筛选排序、可信度、时间线
-node tests/store.test.js       # 12 项：持久化、异常降级、数据回读
-node tests/dom-wiring.test.js  # 10 项：DOM 接线、图标定义、设计令牌约束
+node tests/logic.test.js         # 46 项：事实判定、日期计算、筛选排序、可信度、时间线
+node tests/store.test.js         # 12 项：持久化、异常降级、数据回读
+node tests/dom-wiring.test.js    # 10 项：DOM 接线、图标定义、设计令牌约束
+node tests/status-parity.test.js #  6 项：前端与离线报告的状态判定一致性
 
 python tools/build_dataset.py --check   # 数据校验：结构、关系链、无编造、无遗漏
+python tools/build_report.py            # 生成 docs/DATA_AUDIT.md 数据治理审计报告
 ```
 
 CI 配置在 `.github/workflows/pages.yml`：推送到 `main` 时先跑全部测试与数据校验，通过后再发布 Pages。
 数据校验不需要安装额外依赖（只读取已存档的 `data/raw_source.txt`）。
+
+**为什么要有「状态判定一致性」测试**：前端（`js/logic.js`）与离线报告（`tools/build_report.py`）
+各自实现了同一套状态规则。两份实现一旦漂移，就会出现"界面说还能报名、审计报告说已截止"这种
+自相矛盾，而人工检查几乎发现不了。该测试在 4 个不同基准日下逐个比对两侧判定，不一致即失败。
 
 测试覆盖的是**题目事实**而非实现细节，例如："04 号直播已结束应判为已结束""19 号报名已截止但给出候补出路""把基准日改到 9 月 28 日时训练营应变为已结束"。若实现改动导致这些事实判定改变，测试会失败。
 

@@ -13,7 +13,8 @@ const ROOT = path.resolve(__dirname, "..");
 const SUITES = [
   { file: "tests/logic.test.js", title: "领域逻辑（状态判定 / 筛选 / 可信度 / 时间线）" },
   { file: "tests/store.test.js", title: "本地状态持久化" },
-  { file: "tests/dom-wiring.test.js", title: "界面接线与设计令牌约束" }
+  { file: "tests/dom-wiring.test.js", title: "界面接线与设计令牌约束" },
+  { file: "tests/status-parity.test.js", title: "前端与离线报告的状态判定一致性" }
 ];
 
 function line(char) {
