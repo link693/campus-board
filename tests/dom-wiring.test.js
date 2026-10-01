@@ -153,6 +153,75 @@ test("字体大小只在令牌中定义，组件层不出现裸 px 字号", () =
   assert(bad.length === 0, `存在裸字号（应使用 var(--fs-*)）：\n      ${bad.join("\n      ")}`);
 });
 
+test("可点元素尺寸不低于 36px（触屏可用性）", () => {
+  const css = fs.readFileSync(path.join(ROOT, "css", "app.css"), "utf8");
+  const tokens = fs.readFileSync(path.join(ROOT, "css", "tokens.css"), "utf8");
+  const MIN = 36;
+  const bad = [];
+
+  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = ruleRe.exec(css))) {
+    const selectors = m[1].trim();
+    const body = m[2];
+    if (!/(^|[\s,])\.(icon-btn|act-btn|btn|chip|switch)\b/.test(selectors)) continue;
+    if (/\[aria-pressed/.test(selectors)) continue;   // 状态变体不重复声明尺寸
+    if (/::/.test(selectors)) continue;               // 伪元素是装饰，不是可点区域
+    const h = /(?:^|[;\s])height:\s*(\d+)px/.exec(body);
+    if (!h) continue;
+    const value = Number(h[1]);
+    if (value < MIN) bad.push(`${selectors.trim()} height:${value}px`);
+  }
+
+  // 分段控件由「外层容器留白 + 内部按钮」构成，检查整体高度是否达标
+  const segOuter = /\.segmented\s*\{([^}]*)\}/.exec(css);
+  const segInner = /\.segmented button\s*\{([^}]*)\}/.exec(css);
+  if (segOuter && segInner) {
+    const padRaw = /padding:\s*([^;]+);/.exec(segOuter[1]);
+    // 令牌变量按 --sp-1 = 4px 解析，其余情况按 4px 处理
+    const pad = padRaw ? (/(\d+)px/.test(padRaw[1]) ? Number(/(\d+)px/.exec(padRaw[1])[1]) : 4) : 0;
+    const inner = Number((/height:\s*(\d+)px/.exec(segInner[1]) || [0, 0])[1]);
+    if (inner && inner + pad * 2 < 40) {
+      bad.push(`.segmented 整体高度 ${inner + pad * 2}px（按钮 ${inner}px + 留白 ${pad * 2}px）`);
+    }
+  }
+
+  // 令牌层的最小尺寸变量也必须达标
+  const tokenMin = /--h-control:\s*(\d+)px/.exec(tokens);
+  if (tokenMin && Number(tokenMin[1]) < MIN) {
+    bad.push(`--h-control:${tokenMin[1]}px`);
+  }
+
+  assert(bad.length === 0,
+    `以下可点元素小于 ${MIN}px（用户在触屏上难以点中）：\n      ${bad.join("\n      ")}`);
+});
+
+test("卡片操作按钮同时具备图标与文字，且不是裸图标", () => {
+  const ui = fs.readFileSync(path.join(ROOT, "js", "ui.js"), "utf8");
+  assert(/var favBtn = el\("button", "act-btn"\)/.test(ui), "收藏按钮未使用 .act-btn");
+  assert(/var regBtn = el\("button", "act-btn act-btn-primary"\)/.test(ui),
+    "报名按钮未使用 .act-btn 主样式");
+  // 两个按钮都必须带文字标签，而不是只有图标
+  assert(/favOn \? "已收藏" : "收藏"/.test(ui), "收藏按钮缺少文字标签");
+  assert(/regOn \? "已加入" : "我要参加"/.test(ui), "报名按钮缺少文字标签");
+  // 图标必须成对出现（图标 + 文字）
+  assert(/favBtn\.appendChild\(icon\(/.test(ui), "收藏按钮缺少图标");
+  assert(/regBtn\.appendChild\(icon\(/.test(ui), "报名按钮缺少图标");
+});
+
+test("卡片操作按钮在深色底色上有可见的描边与底色", () => {
+  const css = fs.readFileSync(path.join(ROOT, "css", "app.css"), "utf8");
+  const block = /\.act-btn\s*\{([^}]*)\}/.exec(css);
+  assert(block, "找不到 .act-btn 规则");
+  const body = block[1];
+  assert(/border:\s*1px solid var\(--border-strong\)/.test(body),
+    "act-btn 缺少可见描边，会在深色卡片上融入背景");
+  assert(/background:\s*var\(--surface-2\)/.test(body),
+    "act-btn 缺少底色，会在深色卡片上融入背景");
+  assert(/color:\s*var\(--text\)/.test(body),
+    "act-btn 文字颜色过暗");
+});
+
 console.log(`\n${"-".repeat(52)}`);
 if (failures.length === 0) {
   console.log(`全部通过：${passed} 项检查`);

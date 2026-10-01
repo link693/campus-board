@@ -74,6 +74,12 @@ python tools/serve.py --prefix campus-board    # 模拟 GitHub Pages 的子路�
 | --- | --- |
 | ![可疑标注](docs/screenshots/03-可疑内容标注与判定理由.png) | ![发布](docs/screenshots/04-学生自主发布与实时提示.png) |
 
+卡片操作按钮的默认态与选中态（36px 高、带描边与底色，选中后填充主色，避免在深色卡片上"看不出可点"）：
+
+| 默认态 | 选中态 |
+| --- | --- |
+| ![按钮默认态](docs/screenshots/06-操作按钮默认态.png) | ![按钮选中态](docs/screenshots/07-操作按钮选中态.png) |
+
 移动端（390px，已验证无水平溢出）：
 
 ![移动端](docs/screenshots/05-移动端-390px.png)

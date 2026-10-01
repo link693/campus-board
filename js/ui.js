@@ -199,7 +199,7 @@
     if (cap) facts.appendChild(fact("i-users", cap));
     card.appendChild(facts);
 
-    /* 底部操作 */
+    /* 底部操作：状态说明 + 明确的按钮（图标 + 文字，保证可点尺寸与可见性） */
     var foot = el("div", "card-foot");
     var stateText = el("span", "card-status-note", status.reason || "");
     stateText.title = status.reason || "";
@@ -207,13 +207,23 @@
 
     var actions = el("div", "card-actions");
 
-    var favBtn = iconButton(store.isFavorite(act.id) ? "i-bookmark-fill" : "i-bookmark",
-      store.isFavorite(act.id) ? "取消收藏" : "收藏", store.isFavorite(act.id));
+    var favOn = store.isFavorite(act.id);
+    var favBtn = el("button", "act-btn");
+    favBtn.type = "button";
+    favBtn.setAttribute("aria-pressed", String(favOn));
+    favBtn.setAttribute("aria-label", favOn ? "取消收藏" : "收藏这条信息");
+    favBtn.appendChild(icon(favOn ? "i-bookmark-fill" : "i-bookmark"));
+    favBtn.appendChild(el("span", null, favOn ? "已收藏" : "收藏"));
     favBtn.addEventListener("click", function () { handlers.toggleFavorite(act.id); });
     actions.appendChild(favBtn);
 
-    var regBtn = iconButton(store.isRegistered(act.id) ? "i-check" : "i-plus",
-      store.isRegistered(act.id) ? "取消「我要参加」" : "标记我要参加", store.isRegistered(act.id));
+    var regOn = store.isRegistered(act.id);
+    var regBtn = el("button", "act-btn act-btn-primary");
+    regBtn.type = "button";
+    regBtn.setAttribute("aria-pressed", String(regOn));
+    regBtn.setAttribute("aria-label", regOn ? "取消「我要参加」" : "标记我要参加");
+    regBtn.appendChild(icon(regOn ? "i-check" : "i-plus"));
+    regBtn.appendChild(el("span", null, regOn ? "已加入" : "我要参加"));
     regBtn.addEventListener("click", function () { handlers.toggleRegistered(act.id); });
     actions.appendChild(regBtn);
 
@@ -223,10 +233,8 @@
       actions.appendChild(editBtn);
     }
 
-    var more = iconButton("i-chevron", "查看详情");
-    more.addEventListener("click", function () { handlers.openDetail(act.id); });
-    actions.appendChild(more);
-
+    /* 详情入口：卡片标题可点，这里不再重复放一个箭头按钮，
+       否则在 280px 宽的卡片里会把两个主要操作挤到放不下。 */
     foot.appendChild(actions);
     card.appendChild(foot);
 
