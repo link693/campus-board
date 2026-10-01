@@ -2224,11 +2224,17 @@
 }
 
 /* 繁忙度密度条：14 格，颜色深浅代表当天有多少事 */
+.density-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
 .density {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--sp-1);
-  margin-bottom: var(--sp-4);
 }
 
 .density-cell {
@@ -2289,7 +2295,6 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  margin-bottom: var(--sp-3);
   font-size: var(--fs-xs);
   color: var(--text-subtle);
 }

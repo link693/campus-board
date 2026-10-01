@@ -1123,8 +1123,12 @@
    * 繁忙度密度条：14 格，一眼看出哪几天最挤。
    * 每格显示日期数字 + 用点的颜色区分"有活动"与"有截止"。
    */
-  function renderDensity(container, density, handlers) {
+  function renderDensity(container, density, handlers, legendEl) {
     container.textContent = "";
+    if (legendEl) {
+      legendEl.textContent = "";
+      legendEl.hidden = true;
+    }
     if (!density.length) return;
 
     var peak = density.reduce(function (max, d) { return Math.max(max, d.load); }, 0);
@@ -1155,17 +1159,19 @@
       container.appendChild(cell);
     });
 
-    if (peak >= 4) {
-      var legend = el("div", "density-legend");
+    /* 图例只在密度较高时出现。
+       注意：必须写入 legendEl 这个固定容器，而不是插到 container 的父节点——
+       后者会在每次重新渲染时累积出一条新图例（这个缺陷真实出现过两次以上）。 */
+    if (peak >= 4 && legendEl) {
       [["session", "活动"], ["deadline", "报名截止"]].forEach(function (pair) {
         var span = el("span");
         var swatch = document.createElement("i");
         swatch.dataset.kind = pair[0];
         span.appendChild(swatch);
         span.appendChild(el("span", null, pair[1]));
-        legend.appendChild(span);
+        legendEl.appendChild(span);
       });
-      container.parentNode.insertBefore(legend, container);
+      legendEl.hidden = false;
     }
   }
 

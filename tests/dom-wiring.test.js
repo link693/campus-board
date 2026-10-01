@@ -237,6 +237,31 @@ test("卡片操作按钮同时具备图标与文字，且不是裸图标", () =>
   assert(/regBtn\.appendChild\(icon\(/.test(ui), "报名按钮缺少图标");
 });
 
+test("渲染函数不得往容器外追加节点（重复渲染会累积）", () => {
+  // 真实缺陷：renderDensity 曾用 container.parentNode.insertBefore(legend, container)
+  // 插入图例，而每次只清空 container，于是每渲染一次就多一条图例。
+  // 正确做法是把图例写进固定的容器，每次随容器一起重建。
+  const ui = fs.readFileSync(path.join(ROOT, "js", "ui.js"), "utf8");
+  const bad = [];
+  ui.split("\n").forEach((line, i) => {
+    if (/parentNode\.(insertBefore|appendChild)/.test(line)) {
+      bad.push(`ui.js:${i + 1} ${line.trim()}`);
+    }
+  });
+  assert(bad.length === 0,
+    `渲染函数不应修改容器之外的 DOM（重复渲染会累积）：\n      ${bad.join("\n      ")}`);
+});
+
+test("会重复渲染的组件都有固定的子容器，避免累积", () => {
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  // 密度条：格子与图例必须各有固定 id，渲染时整体重建
+  assert(/id="density"/.test(html), "缺少 #density 容器");
+  assert(/id="density-legend"/.test(html), "缺少 #density-legend 固定容器");
+  const ui = fs.readFileSync(path.join(ROOT, "js", "ui.js"), "utf8");
+  assert(/legendEl\.textContent = ""/.test(ui) && /legendEl\.hidden = true/.test(ui),
+    "renderDensity 未在每次渲染时重建图例容器");
+});
+
 test("卡片操作按钮在深色底色上有可见的描边与底色", () => {
   const css = fs.readFileSync(path.join(ROOT, "css", "app.css"), "utf8");
   // 必须精确匹配基类规则 `.act-btn {`（行首），

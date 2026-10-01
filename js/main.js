@@ -76,6 +76,7 @@
     /* 时间线视图切换与密度条 */
     viewSwitch: document.getElementById("view-switch"),
     density: document.getElementById("density"),
+    densityLegend: document.getElementById("density-legend"),
     timelinePanel: document.getElementById("timeline")
   };
 
@@ -352,7 +353,7 @@
         render();
         UI.toast(dom.toasts, "已切到日历并定位到 " + date, "accent", "i-calendar");
       }
-    });
+    }, dom.densityLegend);
 
     /* 时间机器：未来几天的状态变化预演 */
     UI.renderMachine(dom.machineStrip, dom.machineNote, dom.machineDesc,

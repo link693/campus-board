@@ -1,12 +1,12 @@
 {
-  "version": "ebc708b783",
+  "version": "47c8a43d08",
   "files": {
     "css/tokens.css": "85ffb579",
-    "css/app.css": "613d5aaf",
+    "css/app.css": "4114812b",
     "js/data.js": "54457c3e",
     "js/logic.js": "1b0063a8",
     "js/store.js": "50ecdd0f",
-    "js/ui.js": "19263c02",
-    "js/main.js": "75f887ed"
+    "js/ui.js": "b1d00da4",
+    "js/main.js": "b75bb1d4"
   }
 }
