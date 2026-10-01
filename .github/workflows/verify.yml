@@ -1,0 +1,45 @@
+name: 质量检查
+
+# 只做检查，不参与发布。
+#
+# 为什么不含发布步骤：
+#   本仓库的 Pages 发布源是「从分支发布」（legacy），GitHub 会自动构建并发布。
+#   如果这里再加一条 actions/deploy-pages 链路，两者会争抢同一个发布位并互相取消，
+#   表现为「工作流失败 + 线上长时间不更新」（这个坑本项目实际踩过一次）。
+#
+# 因此本工作流只负责在每次推送后给出可见的质量结论：
+#   测试或数据校验不通过 → Actions 里出现红色记录，一眼可见。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: 测试与数据校验
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 运行全部自动化测试
+        run: node tests/run-all.js
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 校验数据集与题目原文一致（防编造、防遗漏）
+        run: python tools/build_dataset.py --check
+
+      - name: 校验静态资源版本号是最新的
+        run: python tools/stamp_assets.py --check
