@@ -6,7 +6,8 @@
 > 题目提供的 26 条模拟校园信息全部落地于 `data/activities.json`，**未编造任何题目未给出的事实**；
 > 所有状态由基准日期实时计算，数据中不存在写死的"已截止"文案。
 
-**在线访问**：`<部署后填写 GitHub Pages 地址>`
+**在线访问**：**https://link693.github.io/campus-board/**
+**仓库地址**：https://github.com/link693/campus-board
 **本地运行**：直接双击 `index.html`（零构建、零依赖，无需服务器）
 
 ---
@@ -57,7 +58,9 @@ python tools/serve.py --prefix campus-board    # 模拟 GitHub Pages 的子路�
 
 **方式三：GitHub Pages**
 
-仓库已内置 `.github/workflows/pages.yml`，推送到 `main` 后自动发布为静态站点（先跑测试与数据校验，通过才发布），无需任何构建步骤。
+已通过 `Deploy from a branch`（`main` / root）发布，因为本项目是零构建静态站点，此方式与 Actions 发布等价且少一个失败点。
+
+仓库内同时保留了 `.github/workflows/pages.yml`（先跑测试与数据校验、通过后才发布）。若希望改用该流程，把仓库 **Settings → Pages → Source** 改成 `GitHub Actions` 即可，无需改动任何代码。
 
 ## 三之二、界面效果
 
