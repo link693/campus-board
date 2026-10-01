@@ -211,8 +211,10 @@ test("卡片操作按钮同时具备图标与文字，且不是裸图标", () =>
 
 test("卡片操作按钮在深色底色上有可见的描边与底色", () => {
   const css = fs.readFileSync(path.join(ROOT, "css", "app.css"), "utf8");
-  const block = /\.act-btn\s*\{([^}]*)\}/.exec(css);
-  assert(block, "找不到 .act-btn 规则");
+  // 必须精确匹配基类规则 `.act-btn {`（行首），
+  // 否则会误匹配 `.card-actions .act-btn { flex: ... }` 这类组合选择器
+  const block = /^\.act-btn\s*\{([^}]*)\}/m.exec(css);
+  assert(block, "找不到 .act-btn 基类规则（必须单独成行定义）");
   const body = block[1];
   assert(/border:\s*1px solid var\(--border-strong\)/.test(body),
     "act-btn 缺少可见描边，会在深色卡片上融入背景");
@@ -220,6 +222,7 @@ test("卡片操作按钮在深色底色上有可见的描边与底色", () => {
     "act-btn 缺少底色，会在深色卡片上融入背景");
   assert(/color:\s*var\(--text\)/.test(body),
     "act-btn 文字颜色过暗");
+  assert(/height:\s*36px/.test(body), "act-btn 高度应为 36px");
 });
 
 console.log(`\n${"-".repeat(52)}`);
