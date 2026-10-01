@@ -512,6 +512,7 @@
       if (act.registration.deadlineAt) {
         entries.push({
           activityId: act.id,
+          activity: act,
           kind: "deadline",
           kindLabel: "报名截止",
           at: act.registration.deadlineAt,
@@ -523,6 +524,7 @@
       if (act.schedule.firstSessionAt) {
         entries.push({
           activityId: act.id,
+          activity: act,
           kind: "session",
           kindLabel: "活动开始",
           at: act.schedule.firstSessionAt,
@@ -534,6 +536,7 @@
       if (act.schedule.endAt && act.category === "competition") {
         entries.push({
           activityId: act.id,
+          activity: act,
           kind: "submit",
           kindLabel: "作品提交",
           at: act.schedule.endAt,

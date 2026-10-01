@@ -368,7 +368,7 @@
       body.appendChild(renderTrust(cred));
     }
 
-    /* 时间冲突：材料里真实存在但列表看不出来的问题 */
+    /* 时间冲突：同一时段的活动重叠，列表形式看不出来 */
     if (handlers.conflicts && handlers.conflicts.length) {
       var conflictBox = renderConflicts(handlers.conflicts, handlers);
       if (conflictBox) body.appendChild(conflictBox);
@@ -419,10 +419,10 @@
       var missSection = el("section", "section");
       var missTitle = el("h3", "section-title");
       missTitle.appendChild(icon("i-alert"));
-      missTitle.appendChild(el("span", null, "题目未提供的信息"));
+      missTitle.appendChild(el("span", null, "未标明或未说明的信息"));
       missSection.appendChild(missTitle);
       missSection.appendChild(el("p", "prose",
-        "以下字段在原始材料中没有给出。平台不进行推测，需要你向主办方确认："));
+        "以下内容在原始信息中没有给出。平台不进行推测，需要你向主办方确认："));
       var missTags = el("div", "tag-list");
       act.missingFields.forEach(function (f) {
         missTags.appendChild(el("span", "tag tag-warning", f));
@@ -471,7 +471,7 @@
     var rawSection = el("section", "section");
     var rawTitle = el("h3", "section-title");
     rawTitle.appendChild(icon("i-check"));
-    rawTitle.appendChild(el("span", null, "题目原文对照"));
+    rawTitle.appendChild(el("span", null, "原始信息对照"));
     rawSection.appendChild(rawTitle);
     var quote = el("blockquote", "raw-quote");
     quote.appendChild(el("span", "ref", "原始信息 " + act.sourceRef + " 号"));
@@ -571,7 +571,7 @@
       if (note) dd.appendChild(el("span", "change-note", "（" + note + "）"));
     } else {
       var missing = el("span", "missing", "未提供");
-      missing.title = note || "题目材料中没有给出该信息，平台不作推测";
+      missing.title = note || "原始信息中没有给出该字段，平台不作推测";
       dd.appendChild(missing);
       if (note) dd.appendChild(el("span", "change-note", " " + note));
     }
@@ -580,6 +580,13 @@
 
   /* ============================================================ 时间线 */
 
+  /**
+   * 时间线：按「天 → 活动」两层归组。
+   *
+   * 为什么这样改：同一个活动可能有"报名截止"和"活动开始"两个节点，
+   * 若把它们当作两条独立记录平铺，同一天里就会出现多行看起来重复的内容。
+   * 按天归组后，一天一张卡，卡内按活动聚合，一个活动只出现一次。
+   */
   function renderTimeline(container, timeline, store, handlers, today) {
     container.textContent = "";
     if (!timeline.all.length) {
@@ -587,46 +594,95 @@
       return;
     }
 
-    if (timeline.today.length) {
-      container.appendChild(el("div", "tl-group-label", "就在今天"));
-      timeline.today.forEach(function (e) { container.appendChild(tlItem(e, today, handlers)); });
-    }
+    /* 一次遍历：按日期建天，天内按活动归并，保持首次出现的顺序 */
+    var days = [];
+    var dayIndex = {};
+    timeline.all.forEach(function (e) {
+      var date = L.isoDatePart(e.at);
+      if (!date) return;
 
-    var groups = {};
-    var order = [];
-    timeline.upcoming.forEach(function (e) {
-      var d = L.isoDatePart(e.at);
-      if (!groups[d]) { groups[d] = []; order.push(d); }
-      groups[d].push(e);
+      var day = dayIndex[date];
+      if (!day) {
+        day = {
+          date: date,
+          daysLeft: L.daysBetween(today, date),
+          items: 0,
+          groups: [],
+          groupIndex: {}
+        };
+        dayIndex[date] = day;
+        days.push(day);
+      }
+      day.items++;
+
+      var group = day.groupIndex[e.activityId];
+      if (!group) {
+        group = { activityId: e.activityId, activity: null, nodes: [] };
+        day.groupIndex[e.activityId] = group;
+        day.groups.push(group);
+      }
+      /* 保留活动对象，供后续读取标题与状态 */
+      if (!group.activity) group.activity = e.activity;
+      group.nodes.push(e);
     });
 
-    order.forEach(function (d) {
-      var rel = L.relativeDays(d, today);
-      container.appendChild(el("div", "tl-group-label", L.formatDate(d) + (rel ? " · " + rel : "")));
-      groups[d].forEach(function (e) { container.appendChild(tlItem(e, today, handlers)); });
+    days.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+
+    days.forEach(function (day) {
+      var card = el("div", "tlday");
+      card.dataset.daysLeft = String(day.daysLeft);
+
+      /* 日期头：日期 + 相对天数 + 当天节点数 */
+      var head = el("div", "tlday-head");
+      var dateWrap = el("div", "tlday-date");
+      dateWrap.appendChild(el("span", "tlday-day", L.formatDate(day.date)));
+      var rel = day.daysLeft === 0 ? "今天" : day.daysLeft === 1 ? "明天" : day.daysLeft + " 天后";
+      var relNode = el("span", "tlday-rel", rel);
+      relNode.dataset.tone = day.daysLeft === 0 ? "danger" : day.daysLeft <= 3 ? "warning" : "accent";
+      dateWrap.appendChild(relNode);
+      head.appendChild(dateWrap);
+      head.appendChild(el("span", "tlday-count", day.groups.length + " 项"));
+      if (day.items > day.groups.length) {
+        head.appendChild(el("span", "tlday-note", "共 " + day.items + " 个节点"));
+      }
+      card.appendChild(head);
+
+      /* 当天每个活动一行，行内用标签区分"报名截止 / 活动开始 / 作品提交" */
+      day.groups.forEach(function (group) {
+        var row = el("button", "tlrow");
+        row.type = "button";
+
+        var main = el("div", "tlrow-main");
+        main.appendChild(el("span", "tlrow-title", group.activity.title));
+
+        var meta = el("div", "tlrow-meta");
+        /* 同一活动可能有多个节点，全部列出，不再拆成多行 */
+        group.nodes.forEach(function (node, i) {
+          if (i > 0) meta.appendChild(el("span", "tlrow-plus", "+"));
+          var tag = el("span", "tlrow-tag");
+          tag.dataset.kind = node.kind;
+          tag.appendChild(icon(node.kind === "deadline" ? "i-clock"
+            : node.kind === "submit" ? "i-external" : "i-play"));
+          tag.appendChild(el("span", null,
+            node.kindLabel + (node.kind === "session" && L.formatTime(node.at)
+              ? " " + L.formatTime(node.at) : "")));
+          meta.appendChild(tag);
+        });
+        main.appendChild(meta);
+
+        row.appendChild(main);
+
+        var status = L.computeStatus(group.activity, today);
+        var badgeNode = el("span", "tlrow-status", status.label);
+        badgeNode.dataset.tone = status.tone;
+        row.appendChild(badgeNode);
+
+        row.addEventListener("click", function () { handlers.openDetail(group.activity.id); });
+        card.appendChild(row);
+      });
+
+      container.appendChild(card);
     });
-  }
-
-  function tlItem(entry, today, handlers) {
-    var btn = el("button", "tl-item");
-    btn.type = "button";
-    btn.dataset.kind = entry.kind;
-
-    var when = el("div", "tl-when");
-    var left = entry.daysLeft;
-    var tone = left === 0 ? "danger" : left <= 3 ? "warning" : "accent";
-    when.appendChild(el("span", "tl-left num", left === 0 ? "今天" : left + "天"));
-    when.firstChild.dataset.tone = tone;
-    when.appendChild(el("time", "tl-date", L.formatTime(entry.at) || "全天"));
-    btn.appendChild(when);
-
-    var body = el("div", "tl-body");
-    body.appendChild(el("span", "tl-kind", entry.kindLabel));
-    body.appendChild(el("span", "tl-title", entry.label));
-    btn.appendChild(body);
-
-    btn.addEventListener("click", function () { handlers.openDetail(entry.activityId); });
-    return btn;
   }
 
   /* ============================================================ 图例 */
@@ -891,7 +947,7 @@
     } else {
       bodyEl.appendChild(el("p", "filter-hint",
         "在卡片上点「我要参加」，这里会帮你核算每周时间是否排得下。" +
-        "材料中有 3 项机会写明了每周投入要求（4 / 5 / 6 小时）。"));
+        "已有 3 项机会写明了每周投入要求（4 / 5 / 6 小时）。"));
     }
   }
 

@@ -321,6 +321,16 @@ test("信息缺失情况被统计", () => {
 
 group("个人时间线");
 
+test("时间线节点自带 activity 对象（调用方无需按 id 反查）", () => {
+  // 回归用例：节点曾经只带 activityId，界面按 group.activity.title 读取时抛
+  // "Cannot read properties of undefined"，导致时间线整块渲染失败。
+  const tl = logic.buildTimeline(ACTIVITIES, { today: TODAY });
+  assert(tl.all.length > 0, "应有时间线节点");
+  const missing = tl.all.filter((e) => !e.activity || !e.activity.title);
+  eq(missing.length, 0,
+    `以下节点缺少 activity：${missing.map((e) => e.activityId).join(", ")}`);
+});
+
 test("时间线包含报名截止与活动开始，且按时间升序", () => {
   const tl = logic.buildTimeline(ACTIVITIES, { today: TODAY });
   assert(tl.all.length > 10, `时间线条目应充足，实际 ${tl.all.length}`);

@@ -96,7 +96,7 @@
 
   /* ============================================================ 数据组装 */
 
-  /** 用户发布的内容规范化成与题目条目同构的对象，走同一套状态与可信度逻辑。 */
+  /** 用户发布的内容规范化成与内置条目同构的对象，走同一套状态与可信度逻辑。 */
   function normalizePost(post) {
     var hasDate = !!post.date;
     var hasDeadline = !!post.deadline;
@@ -162,7 +162,7 @@
 
   /* ============================================================ 派生数据 */
 
-  /** 当前生效的"今天"：时间机器可改，默认为题目给定的基准日。 */
+  /** 当前生效的"今天"：时间机器可改，默认为内置的基准日。 */
   function baseline() {
     return filters.baseline || TODAY;
   }
@@ -265,7 +265,7 @@
 
     /* 头部 */
     dom.todayValue.textContent = baseline();
-    dom.todayHint.textContent = baseline() === TODAY ? "以考核当日为判断基准" : "已由时间机器改写";
+    dom.todayHint.textContent = baseline() === TODAY ? "以发布当日为判断基准" : "已由时间机器改写";
 
     /* 指标 */
     var summary = L.summarize(L.decorateAll(activities, baseline(), {}));
@@ -363,12 +363,12 @@
     /* 时间机器的状态显示 */
     dom.baselineDate.value = baseline();
     if (baseline() === TODAY) {
-      dom.baselineHint.textContent = "当前为题目给定的基准日";
+      dom.baselineHint.textContent = "当前为默认判断基准日";
       dom.baselineHint.dataset.tone = "";
     } else {
       var diff = L.daysBetween(TODAY, baseline());
       dom.baselineHint.textContent = "已改为 " + baseline() +
-        "（相对题目基准日 " + (diff > 0 ? "+" : "") + diff + " 天），全部判定已重算";
+        "（相对默认基准日 " + (diff > 0 ? "+" : "") + diff + " 天），全部判定已重算";
       dom.baselineHint.dataset.tone = "warning";
     }
 
@@ -717,7 +717,7 @@
     persistFilters();
     render();
     UI.toast(dom.toasts,
-      filters.baseline === TODAY ? "已回到题目基准日" : "已把基准日改为 " + filters.baseline,
+      filters.baseline === TODAY ? "已回到默认判断基准日" : "已把基准日改为 " + filters.baseline,
       "accent", "i-history");
   });
 
@@ -725,7 +725,7 @@
     filters.baseline = TODAY;
     persistFilters();
     render();
-    UI.toast(dom.toasts, "已回到题目基准日 " + TODAY, "accent", "i-history");
+    UI.toast(dom.toasts, "已回到默认判断基准日 " + TODAY, "accent", "i-history");
   });
 
   /* 精力预算：每周可投入小时数 */
@@ -766,7 +766,7 @@
     var s = store.summary();
     var ok = window.confirm(
       "将清空本机保存的 " + s.favorites + " 条收藏、" + s.registered + " 条报名标记、" +
-      s.posts + " 条我的发布，以及全部筛选偏好。题目自带的 26 条信息不受影响。是否继续？");
+      s.posts + " 条我的发布，以及全部筛选偏好。内置的 26 条信息不受影响。是否继续？");
     if (!ok) return;
     store.clearAll();
     filters = { keyword: "", status: "all", sources: [], categories: [],

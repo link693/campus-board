@@ -1568,95 +1568,136 @@
 
 /* ================================ 时间线 ================================ */
 
+/* 时间线容器：左侧一条时间轨，每天一张卡挂在轨上 */
 .timeline {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  max-height: 520px;
+  max-height: 560px;
   overflow-y: auto;
-  padding-right: var(--sp-1);
+  padding: var(--sp-1) var(--sp-1) var(--sp-2) 0;
 }
 
-.tl-group-label {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-xs);
-  color: var(--text-subtle);
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
+.tlday {
+  position: relative;
+  padding-left: var(--sp-5);
 }
 
-.tl-group-label::after {
+/* 时间轨：每个日期一个节点，用竖线连起来 */
+.tlday::before {
   content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+  position: absolute;
+  left: 5px;
+  top: 18px;
+  bottom: -12px;
+  width: 1px;
+  background: var(--border-strong);
 }
 
-.tl-item {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: var(--sp-3);
-  width: 100%;
-  padding: var(--sp-2) var(--sp-2) var(--sp-2) 0;
-  border-radius: var(--r-md);
-  text-align: left;
-  transition: background var(--t-fast) var(--ease);
+.tlday:last-child::before {
+  display: none;
 }
 
-.tl-item:hover {
-  background: var(--surface-2);
+.tlday::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--r-pill);
+  background: var(--surface-solid);
+  border: 2px solid var(--text-subtle);
 }
 
-.tl-when {
+.tlday[data-days-left="0"]::after {
+  border-color: var(--danger);
+  background: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-bg);
+}
+
+.tlday[data-days-left="1"]::after,
+.tlday[data-days-left="2"]::after,
+.tlday[data-days-left="3"]::after {
+  border-color: var(--warning);
+}
+
+.tlday-head {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-end;
-  text-align: right;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
 }
 
-.tl-date {
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-  line-height: var(--lh-tight);
+.tlday-date {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
 }
 
-.tl-left {
+.tlday-day {
   font-size: var(--fs-sm);
   font-weight: var(--fw-title);
-  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-title);
+}
+
+.tlday-rel {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
   color: var(--accent);
 }
 
-.tl-left[data-tone="warning"] {
+.tlday-rel[data-tone="warning"] {
   color: var(--warning);
 }
 
-.tl-left[data-tone="danger"] {
+.tlday-rel[data-tone="danger"] {
   color: var(--danger);
 }
 
-.tl-left[data-tone="neutral"] {
+.tlday-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
   color: var(--text-subtle);
 }
 
-.tl-body {
+.tlday-note {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+/* 当天每个活动一行：标题在上，节点标签在下 */
+.tlrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  text-align: left;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.tlrow:hover {
+  border-color: var(--accent);
+  background: var(--bg-elev);
+  transform: translateX(2px);
+}
+
+.tlrow-main {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
   min-width: 0;
-  border-left: 2px solid var(--border);
-  padding-left: var(--sp-3);
 }
 
-.tl-kind {
-  font-size: var(--fs-xs);
-  color: var(--text-subtle);
-}
-
-.tl-title {
+.tlrow-title {
   font-size: var(--fs-sm);
   color: var(--text);
   line-height: var(--lh-snug);
@@ -1666,16 +1707,73 @@
   overflow: hidden;
 }
 
-.tl-item[data-kind="deadline"] .tl-body {
-  border-left-color: var(--warning-divider);
+.tlrow-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
 }
 
-.tl-item[data-kind="session"] .tl-body {
-  border-left-color: var(--accent-divider);
+/* 节点标签：报名截止 / 活动开始 / 作品提交 */
+.tlrow-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
 }
 
-.tl-item[data-kind="submit"] .tl-body {
-  border-left-color: var(--accent-2-divider);
+.tlrow-tag svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.tlrow-tag[data-kind="deadline"] {
+  color: var(--warning);
+}
+
+.tlrow-tag[data-kind="session"] {
+  color: var(--accent);
+}
+
+.tlrow-tag[data-kind="submit"] {
+  color: var(--accent-2);
+}
+
+.tlrow-plus {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+.tlrow-status {
+  align-self: flex-start;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--neutral-bg);
+  color: var(--neutral);
+}
+
+.tlrow-status[data-tone="warning"] {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.tlrow-status[data-tone="danger"] {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.tlrow-status[data-tone="success"] {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.tlrow-status[data-tone="accent"] {
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 
 /* ================================ 图例与说明 ================================ */
